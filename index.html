@@ -85,6 +85,7 @@ input,select,textarea{font-size:16px}
 .menu-item .mi{width:22px;height:22px;display:grid;place-items:center;flex:0 0 22px}.menu-item .mi svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .admin-only{display:none}.admin-only.show{display:block}.admin-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}.admin-nav::-webkit-scrollbar{display:none}.admin-nav button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:800}.admin-nav button.active{background:var(--dark);color:#fff;border-color:var(--dark)}
 .admin-pane{display:none}.admin-pane.active{display:block}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.admin-metric{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:14px}.admin-metric span{display:block;color:var(--muted);font-size:11px}.admin-metric strong{display:block;margin-top:6px;font-size:22px}.admin-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px}.admin-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.admin-card h3{margin:0;font-size:15px}.admin-card p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.admin-card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.admin-card-actions button{border:0;border-radius:10px;padding:9px 10px;background:var(--sage2);font-size:11px;font-weight:800}.admin-card-actions button.danger{background:var(--dangerbg);color:var(--danger)}.admin-filters{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px}.admin-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.admin-meta span{background:var(--sage3);border-radius:8px;padding:5px 7px;font-size:10px;color:var(--muted)}.admin-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}.generated-codes{white-space:pre-wrap;background:#19211D;color:#E6EEE8;border-radius:14px;padding:13px;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:280px;overflow:auto;margin-top:10px}.inquiry-form textarea{min-height:130px}.system-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}.system-toggle input{width:22px;height:22px}.admin-wide{overflow-x:auto}.admin-log{font-size:12px;line-height:1.5}.admin-log b{display:block}.admin-log small{color:var(--muted)}
+.admin-card.clickable{cursor:pointer}.admin-card.clickable:active{transform:scale(.995)}.admin-detail-section{margin-top:18px}.admin-detail-section h3{font-size:16px;margin:0 0 10px}.admin-detail-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}.admin-detail-summary div{background:var(--sage3);border-radius:12px;padding:10px}.admin-detail-summary span{display:block;color:var(--muted);font-size:10px}.admin-detail-summary b{display:block;margin-top:5px;font-size:14px}.owner-lock{background:var(--sage3);border-radius:12px;padding:11px 12px;margin-top:12px;color:var(--muted);font-size:12px;line-height:1.5}.admin-detail-list{display:grid;gap:8px}.admin-detail-item{border:1px solid var(--line);background:#fff;border-radius:13px;padding:11px}.admin-detail-item b{font-size:13px}.admin-detail-item small{display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.45}.admin-user-sheet{max-height:96vh}
 @media(min-width:700px){.admin-grid{grid-template-columns:repeat(4,1fr)}}
 
 .menu-trigger{width:44px;height:44px;border:1px solid var(--line);border-radius:14px;background:var(--paper);display:grid;place-items:center;font-size:23px;font-weight:900;color:var(--dark);box-shadow:var(--shadow)}
@@ -491,7 +492,7 @@ input,select,textarea{font-size:16px}
     <section id="admin" class="view">
       <div class="screen-title"><div><h1>관리자 센터</h1><p>MY CLIENT BOOK 운영 현황</p></div><button class="text-btn" data-go="settings">← 설정</button></div>
       <div class="admin-nav" id="adminNav">
-        <button class="active" data-admin-pane="overview">홈</button><button data-admin-pane="users">가입자</button><button data-admin-pane="codes">이용코드</button><button data-admin-pane="inquiries">문의함</button><button data-admin-pane="data">고객·방문</button><button data-admin-pane="system">시스템</button><button data-admin-pane="logs">로그</button>
+        <button class="active" data-admin-pane="overview">홈</button><button data-admin-pane="users">가입자</button><button data-admin-pane="codes">이용코드</button><button data-admin-pane="inquiries">문의함</button><button data-admin-pane="system">시스템</button><button data-admin-pane="logs">로그</button>
       </div>
       <div id="admin-overview" class="admin-pane active"><div id="adminMetrics" class="admin-grid"></div></div>
       <div id="admin-users" class="admin-pane"><div class="admin-filters"><input id="adminUserSearch" placeholder="이름 또는 이메일 검색"><button class="secondary-btn" id="adminUserSearchBtn">검색</button></div><div id="adminUsersList" class="stack"></div></div>
@@ -500,13 +501,20 @@ input,select,textarea{font-size:16px}
         <div id="adminCodesList" class="stack"></div>
       </div>
       <div id="admin-inquiries" class="admin-pane"><div id="adminInquiriesList" class="stack"></div></div>
-      <div id="admin-data" class="admin-pane"><div class="admin-filters"><input id="adminDataSearch" placeholder="고객명·뒤4자리·계정 이메일"><button class="secondary-btn" id="adminDataSearchBtn">검색</button></div><div class="filter-chips"><button class="active" data-admin-data="customers">고객DB</button><button data-admin-data="visits">방문·매출</button></div><div id="adminDataList" class="stack"></div></div>
       <div id="admin-system" class="admin-pane"><div class="panel"><h2 style="font-size:17px;margin-top:0">서비스 공지</h2><div class="system-toggle"><label for="systemNoticeEnabled">공지 표시</label><input id="systemNoticeEnabled" type="checkbox"></div><input id="systemNoticeTitle" placeholder="공지 제목"><textarea id="systemNoticeMessage" class="large-input" placeholder="공지 내용" style="margin-top:9px"></textarea><div class="system-toggle"><label for="systemMaintenance">점검 모드</label><input id="systemMaintenance" type="checkbox"></div><button class="primary-btn full" id="saveSystemConfigBtn">시스템 설정 저장</button></div></div>
       <div id="admin-logs" class="admin-pane"><div id="adminLogsList" class="stack"></div></div>
     </section>
 
     <div class="creator-mark">MY CLIENT BOOK / Created by <b>HenryLAB</b></div>
   </main>
+
+  <div class="modal" id="adminUserModal" aria-hidden="true">
+    <div class="modal-sheet admin-user-sheet">
+      <div class="modal-grab"></div>
+      <div class="modal-head"><h2 id="adminUserDetailTitle">가입자 상세</h2><button class="icon-btn" id="closeAdminUserModal">×</button></div>
+      <div id="adminUserDetailBody"></div>
+    </div>
+  </div>
 
   <!-- CUSTOMER MODAL -->
   <div class="modal" id="customerModal" aria-hidden="true">
@@ -1246,9 +1254,32 @@ async function loadAdminOverview(){
 }
 async function loadAdminUsers(){
   const rows=await adminRpc('admin_list_users',{p_search:adminUserSearch.value.trim()});adminCache.users=rows||[];
-  adminUsersList.innerHTML=rows?.length?rows.map(u=>`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(u.display_name||'-')}</h3><p>${esc(u.email||'-')}<br>가입 ${koDate(u.joined_at)}</p></div><span class="badge ${u.entitlement_status==='active'?'green':u.entitlement_status==='pending'?'gray':'red'}">${statusKo(u.entitlement_status)}</span></div><div class="admin-meta"><span>활성화: ${sourceKo(u.entitlement_source)}</span><span>처리일: ${koDate(u.activated_at||u.activation_redeemed_at||u.status_changed_at)}</span><span>코드: ${esc(u.activation_label||'미사용')}</span><span>코드 사용일: ${koDate(u.activation_redeemed_at)}</span><span>고객 ${u.customer_count||0}</span><span>방문 ${u.visit_count||0}</span><span>최근 접속 ${koDateTime(u.last_seen_at)}</span></div>${u.activation_note?`<p>관리자 메모: ${esc(u.activation_note)}</p>`:''}${u.entitlement_source!=='owner'?`<div class="admin-card-actions">${u.entitlement_status==='active'?`<button class="danger" data-user-id="${u.user_id}" data-user-action="revoked">계정 정지</button>`:`<button data-user-id="${u.user_id}" data-user-action="active">직접 활성화</button>`}<button data-user-id="${u.user_id}" data-user-action="pending">미활성 전환</button></div>`:''}</article>`).join(''):'<div class="admin-empty">가입자가 없습니다.</div>';
-  [...adminUsersList.querySelectorAll('[data-user-action]')].forEach(b=>b.addEventListener('click',()=>changeUserEntitlement(adminCache.users.find(u=>u.user_id===b.dataset.userId),b.dataset.userAction)));
+  adminUsersList.innerHTML=rows?.length?rows.map(u=>`<article class="admin-card clickable" data-open-user="${u.user_id}" role="button" tabindex="0"><div class="admin-card-head"><div><h3>${esc(u.display_name||'-')}${u.entitlement_source==='owner'?' · Owner':''}</h3><p>${esc(u.email||'-')}<br>가입 ${koDate(u.joined_at)}</p></div><span class="badge ${u.entitlement_status==='active'?'green':u.entitlement_status==='pending'?'gray':'red'}">${statusKo(u.entitlement_status)}</span></div><div class="admin-meta"><span>고객 ${u.customer_count||0}</span><span>방문 ${u.visit_count||0}</span><span>${sourceKo(u.entitlement_source)}</span><span>최근 접속 ${koDateTime(u.last_seen_at)}</span></div><div class="admin-card-actions"><button type="button">상세보기</button></div></article>`).join(''):'<div class="admin-empty">가입자가 없습니다.</div>';
+  [...adminUsersList.querySelectorAll('[data-open-user]')].forEach(card=>{const open=()=>openAdminUserDetail(adminCache.users.find(u=>u.user_id===card.dataset.openUser));card.addEventListener('click',open);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});});
 }
+async function openAdminUserDetail(user){
+  if(!user)return;
+  adminUserDetailTitle.textContent=(user.display_name||'가입자')+' 상세';
+  adminUserDetailBody.innerHTML='<div class="admin-empty">고객·방문 정보를 불러오는 중…</div>';
+  adminUserModal.classList.add('show');adminUserModal.setAttribute('aria-hidden','false');
+  try{
+    const [customers,visits]=await Promise.all([
+      adminRpc('admin_list_customers',{p_user_id:user.user_id,p_search:'',p_limit:500}),
+      adminRpc('admin_list_visits',{p_user_id:user.user_id,p_limit:1000})
+    ]);
+    const total=(visits||[]).reduce((sum,v)=>sum+Number(v.total_sales||0),0);
+    const customerHtml=customers?.length?customers.map(c=>`<div class="admin-detail-item"><b>${esc(c.customer_name)} · ${esc(c.phone_last4)}</b><small>선호 ${esc(c.preferred_style||'-')} · 방문 ${c.visit_count||0}회 · 최근 ${koDate(c.last_visit)}</small>${c.memo?`<small>${esc(c.memo)}</small>`:''}</div>`).join(''):'<div class="admin-empty">등록된 고객이 없습니다.</div>';
+    const visitHtml=visits?.length?visits.map(v=>`<div class="admin-detail-item"><b>${esc(v.customer_name)} · ${esc(v.service||'-')} <span style="float:right">${money(v.total_sales)}</span></b><small>${koDate(v.visit_date)} · 미용 ${money(v.beauty_sales)} · 점판 ${money(v.retail_sales)} · ${esc(v.callback_status||'-')}</small></div>`).join(''):'<div class="admin-empty">방문기록이 없습니다.</div>';
+    const controls=user.entitlement_source==='owner'
+      ?'<div class="owner-lock">Owner 계정은 관리자 권한 보호를 위해 활성·정지·미활성 상태를 변경할 수 없습니다.</div>'
+      :`<div class="admin-card-actions">${user.entitlement_status==='active'?`<button class="danger" data-detail-action="revoked">계정 정지</button>`:`<button data-detail-action="active">직접 활성화</button>`}<button data-detail-action="pending">미활성 전환</button></div>`;
+    adminUserDetailBody.innerHTML=`<div class="admin-card"><div class="admin-card-head"><div><h3>${esc(user.display_name||'-')}${user.entitlement_source==='owner'?' · Owner':''}</h3><p>${esc(user.email||'-')}<br>가입 ${koDate(user.joined_at)} · 최근 접속 ${koDateTime(user.last_seen_at)}</p></div><span class="badge ${user.entitlement_status==='active'?'green':user.entitlement_status==='pending'?'gray':'red'}">${statusKo(user.entitlement_status)}</span></div><div class="admin-meta"><span>활성화: ${sourceKo(user.entitlement_source)}</span><span>처리일: ${koDate(user.activated_at||user.activation_redeemed_at||user.status_changed_at)}</span><span>코드: ${esc(user.activation_label||'미사용')}</span><span>코드 사용일: ${koDate(user.activation_redeemed_at)}</span></div>${user.activation_note?`<p>관리자 메모: ${esc(user.activation_note)}</p>`:''}${controls}</div><div class="admin-detail-summary"><div><span>고객DB</span><b>${customers?.length||0}명</b></div><div><span>방문기록</span><b>${visits?.length||0}건</b></div><div><span>누적매출</span><b>${money(total)}</b></div></div><div class="admin-detail-section"><h3>고객DB</h3><div class="admin-detail-list">${customerHtml}</div></div><div class="admin-detail-section"><h3>방문·매출</h3><div class="admin-detail-list">${visitHtml}</div></div>`;
+    adminUserDetailBody.querySelectorAll('[data-detail-action]').forEach(b=>b.addEventListener('click',async()=>{await changeUserEntitlement(user,b.dataset.detailAction);closeAdminUserDetail();}));
+  }catch(e){adminUserDetailBody.innerHTML=`<div class="admin-empty">${esc(e.message||'정보를 불러오지 못했습니다.')}</div>`;}
+}
+function closeAdminUserDetail(){adminUserModal.classList.remove('show');adminUserModal.setAttribute('aria-hidden','true');}
+closeAdminUserModal.addEventListener('click',closeAdminUserDetail);
+adminUserModal.addEventListener('click',e=>{if(e.target===adminUserModal)closeAdminUserDetail();});
 async function changeUserEntitlement(user,status){
   const action=status==='active'?'직접 활성화':status==='revoked'?'계정 정지':'미활성 전환';
   if(!confirm(`${user.display_name} 계정을 '${action}' 처리할까요?`))return;
@@ -1282,26 +1313,14 @@ async function updateInquiry(item,status,note){
   if(!confirm(`문의 상태를 '${status}'(으)로 변경할까요?`))return;
   try{await adminRpc('admin_update_inquiry',{p_inquiry_id:item.inquiry_id,p_status:status,p_admin_note:note});toast('문의 상태를 변경했습니다.');await Promise.all([loadAdminInquiries(),loadAdminOverview()]);}catch(e){alert(e.message);}
 }
-let adminDataType='customers';
-async function loadAdminData(){
-  if(adminDataType==='customers'){
-    const rows=await adminRpc('admin_list_customers',{p_user_id:null,p_search:adminDataSearch.value.trim(),p_limit:500});adminCache.customers=rows||[];
-    adminDataList.innerHTML=rows?.length?rows.map(c=>`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(c.customer_name)} · ${esc(c.phone_last4)}</h3><p>${esc(c.owner_name)} · ${esc(c.owner_email)}</p></div><span class="badge gray">방문 ${c.visit_count}</span></div><div class="admin-meta"><span>선호 ${esc(c.preferred_style||'-')}</span><span>최근 방문 ${koDate(c.last_visit)}</span><span>등록 ${koDate(c.created_at)}</span></div>${c.memo?`<p>${esc(c.memo)}</p>`:''}</article>`).join(''):'<div class="admin-empty">고객 데이터가 없습니다.</div>';
-  }else{
-    const rows=await adminRpc('admin_list_visits',{p_user_id:null,p_limit:1000});adminCache.visits=rows||[];const q=adminDataSearch.value.trim().toLowerCase(),filtered=q?rows.filter(v=>[v.owner_name,v.owner_email,v.customer_name,v.phone_last4,v.service].some(x=>String(x||'').toLowerCase().includes(q))):rows;
-    adminDataList.innerHTML=filtered.length?filtered.map(v=>`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(v.customer_name)} · ${esc(v.service||'-')}</h3><p>${esc(v.owner_name)} · ${esc(v.owner_email)} · ${koDate(v.visit_date)}</p></div><b>${money(v.total_sales)}</b></div><div class="admin-meta"><span>미용 ${money(v.beauty_sales)}</span><span>점판 ${money(v.retail_sales)}</span><span>${esc(v.callback_status||'-')}</span></div></article>`).join(''):'<div class="admin-empty">방문 데이터가 없습니다.</div>';
-  }
-}
 async function loadAdminSystem(){const d=await adminRpc('admin_get_system_config');adminCache.system=d||{};systemNoticeEnabled.checked=!!d?.notice_enabled;systemNoticeTitle.value=d?.notice_title||'';systemNoticeMessage.value=d?.notice_message||'';systemMaintenance.checked=!!d?.maintenance_enabled;}
 saveSystemConfigBtn.addEventListener('click',async()=>{if(!confirm('서비스 공지와 시스템 설정을 저장할까요?'))return;if(systemMaintenance.checked&&!confirm('점검 모드는 전체 사용자에게 영향을 줄 수 있습니다. 정말 켤까요?'))return;try{await adminRpc('admin_update_system_config',{p_notice_enabled:systemNoticeEnabled.checked,p_notice_title:systemNoticeTitle.value,p_notice_message:systemNoticeMessage.value,p_maintenance_enabled:systemMaintenance.checked});toast('시스템 설정을 저장했습니다.');}catch(e){alert(e.message);}});
 async function loadAdminLogs(){const rows=await adminRpc('admin_list_audit_logs',{p_limit:300});adminCache.logs=rows||[];adminLogsList.innerHTML=rows?.length?rows.map(l=>`<article class="admin-card admin-log"><b>${esc(l.action)}</b><small>${koDateTime(l.created_at)} · ${esc(l.target_type||'-')} · ${esc(l.target_id||'-')}</small><p>${esc(JSON.stringify(l.details||{}))}</p></article>`).join(''):'<div class="admin-empty">관리자 로그가 없습니다.</div>';}
-const adminLoaders={overview:loadAdminOverview,users:loadAdminUsers,codes:loadAdminCodes,inquiries:loadAdminInquiries,data:loadAdminData,system:loadAdminSystem,logs:loadAdminLogs};
+const adminLoaders={overview:loadAdminOverview,users:loadAdminUsers,codes:loadAdminCodes,inquiries:loadAdminInquiries,system:loadAdminSystem,logs:loadAdminLogs};
 async function openAdminPane(name){if(!ensureOwner())return;document.querySelectorAll('[data-admin-pane]').forEach(b=>b.classList.toggle('active',b.dataset.adminPane===name));document.querySelectorAll('.admin-pane').forEach(p=>p.classList.toggle('active',p.id==='admin-'+name));try{await adminLoaders[name]();}catch(e){alert(e.message);}}
 adminNav.addEventListener('click',e=>{const b=e.target.closest('[data-admin-pane]');if(b)openAdminPane(b.dataset.adminPane);});
 openAdminBtn.addEventListener('click',()=>{if(!ensureOwner())return;setView('admin');openAdminPane('overview');});
 adminUserSearchBtn.addEventListener('click',loadAdminUsers);adminUserSearch.addEventListener('keydown',e=>{if(e.key==='Enter')loadAdminUsers();});
-adminDataSearchBtn.addEventListener('click',loadAdminData);adminDataSearch.addEventListener('keydown',e=>{if(e.key==='Enter')loadAdminData();});
-document.querySelectorAll('[data-admin-data]').forEach(b=>b.addEventListener('click',()=>{adminDataType=b.dataset.adminData;document.querySelectorAll('[data-admin-data]').forEach(x=>x.classList.toggle('active',x===b));loadAdminData();}));
 
 function renderAll(){renderHome();renderCustomers();renderRecentVisits();renderCallbacks();renderMonthlyDashboard();renderCalendar();if(searchResult.innerHTML&&sName.value)searchCustomer();}
 
