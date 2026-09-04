@@ -80,6 +80,12 @@ input,select,textarea{font-size:16px}
 .auth-link{display:block;width:100%;border:0;background:transparent;color:#68756C;font-size:13px;font-weight:800;text-align:center;padding:12px 4px 2px;cursor:pointer}.auth-link:hover{text-decoration:underline}.reset-actions{display:grid;gap:9px;margin-top:8px}.reset-help{font-size:12px;line-height:1.55;color:#7D827E;margin:0 0 14px}.calendar-month-summary{margin:12px 0 4px;background:var(--sage3);border:1px solid #DCE5DE;border-radius:16px;padding:13px 14px}.calendar-month-summary span{display:block;color:var(--muted);font-size:10px;font-weight:800}.calendar-month-summary strong{display:block;font-size:21px;letter-spacing:-.5px;margin-top:4px}.calendar-month-summary small{display:block;color:var(--muted);font-size:10px;margin-top:5px;line-height:1.45}
 .account-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0 4px}.account-row small{display:block;color:#7D827E}.account-row b{display:block;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sync-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#6E756F;margin-top:8px}.sync-dot{width:7px;height:7px;border-radius:50%;background:#819687}.sync-pill.syncing .sync-dot{background:#D8A65B}.sync-pill.error .sync-dot{background:#C66A62}
+.auth-switch{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:13px}.auth-switch button{border:0;background:transparent;color:var(--dark);font-weight:900;padding:6px}
+.creator-mark{text-align:center;color:var(--muted);font-size:11px;letter-spacing:.02em;padding:20px 8px 8px}.creator-mark b{color:var(--dark)}
+.menu-item .mi{width:22px;height:22px;display:grid;place-items:center;flex:0 0 22px}.menu-item .mi svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.admin-only{display:none}.admin-only.show{display:block}.admin-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}.admin-nav::-webkit-scrollbar{display:none}.admin-nav button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:800}.admin-nav button.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.admin-pane{display:none}.admin-pane.active{display:block}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.admin-metric{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:14px}.admin-metric span{display:block;color:var(--muted);font-size:11px}.admin-metric strong{display:block;margin-top:6px;font-size:22px}.admin-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px}.admin-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.admin-card h3{margin:0;font-size:15px}.admin-card p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.admin-card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.admin-card-actions button{border:0;border-radius:10px;padding:9px 10px;background:var(--sage2);font-size:11px;font-weight:800}.admin-card-actions button.danger{background:var(--dangerbg);color:var(--danger)}.admin-filters{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px}.admin-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.admin-meta span{background:var(--sage3);border-radius:8px;padding:5px 7px;font-size:10px;color:var(--muted)}.admin-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}.generated-codes{white-space:pre-wrap;background:#19211D;color:#E6EEE8;border-radius:14px;padding:13px;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:280px;overflow:auto;margin-top:10px}.inquiry-form textarea{min-height:130px}.system-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}.system-toggle input{width:22px;height:22px}.admin-wide{overflow-x:auto}.admin-log{font-size:12px;line-height:1.5}.admin-log b{display:block}.admin-log small{color:var(--muted)}
+@media(min-width:700px){.admin-grid{grid-template-columns:repeat(4,1fr)}}
 
 .menu-trigger{width:44px;height:44px;border:1px solid var(--line);border-radius:14px;background:var(--paper);display:grid;place-items:center;font-size:23px;font-weight:900;color:var(--dark);box-shadow:var(--shadow)}
 .menu-backdrop{position:fixed;inset:0;background:rgba(24,30,27,.38);z-index:65;opacity:0;pointer-events:none;transition:opacity .2s ease}.menu-backdrop.show{opacity:1;pointer-events:auto}
@@ -104,12 +110,25 @@ input,select,textarea{font-size:16px}
       <h2>로그인</h2>
       <input id="authEmail" class="large-input" type="email" autocomplete="email" placeholder="이메일" />
       <input id="authPassword" class="large-input" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)" />
-      <div class="auth-actions">
-        <button id="authLoginBtn" class="primary-btn">로그인</button>
-        <button id="authSignupBtn" class="secondary-btn">회원가입</button>
-      </div>
+      <button id="authLoginBtn" class="primary-btn full">로그인</button>
       <button id="authForgotBtn" class="auth-link" type="button">비밀번호를 잊으셨나요?</button>
-      <div id="authMessage" class="auth-message">회원가입 후 구매 시 받은 1회용 이용코드가 필요합니다.</div>
+      <div id="authMessage" class="auth-message">가입한 이메일과 비밀번호로 로그인해주세요.</div>
+      <div class="auth-switch">아직 계정이 없나요? <button id="showSignupBtn" type="button">회원가입</button></div>
+    </div>
+  </div>
+
+  <div id="signupOverlay" class="auth-overlay hidden">
+    <div class="auth-card">
+      <div class="auth-brand">MY CLIENT BOOK</div>
+      <div class="auth-sub">새 계정 만들기</div>
+      <h2>회원가입</h2>
+      <input id="signupName" class="large-input" type="text" autocomplete="name" maxlength="40" placeholder="이름 또는 활동명" />
+      <input id="signupEmail" class="large-input" type="email" autocomplete="email" placeholder="이메일" />
+      <input id="signupPassword" class="large-input" type="password" autocomplete="new-password" placeholder="비밀번호 (6자 이상)" />
+      <input id="signupPassword2" class="large-input" type="password" autocomplete="new-password" placeholder="비밀번호 확인" />
+      <button id="authSignupBtn" class="primary-btn full">인증 메일 받기</button>
+      <div id="signupMessage" class="auth-message">이메일 인증 후 로그인하면 이용권을 등록할 수 있습니다.</div>
+      <div class="auth-switch">이미 계정이 있나요? <button id="showLoginBtn" type="button">로그인</button></div>
     </div>
   </div>
 
@@ -169,16 +188,16 @@ input,select,textarea{font-size:16px}
       <button class="icon-btn" id="menuClose" aria-label="메뉴 닫기">×</button>
     </div>
     <div class="menu-list">
-      <button class="menu-item active" data-view="home"><span class="mi">⌂</span>홈</button>
-      <button class="menu-item" data-view="customers"><span class="mi">○</span>고객관리</button>
-      <button class="menu-item" data-view="visits"><span class="mi">✂</span>방문기록</button>
-      <button class="menu-item" data-view="calendar"><span class="mi">▦</span>캘린더</button>
-      <button class="menu-item" data-view="callbacks"><span class="mi">↻</span>오늘의 콜백</button>
-      <button class="menu-item" data-view="search"><span class="mi">⌕</span>고객검색</button>
-      <button class="menu-item" data-view="sales-detail"><span class="mi">▤</span>월간 대시보드</button>
+      <button class="menu-item active" data-view="home"><span class="mi"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg></span>홈</button>
+      <button class="menu-item" data-view="customers"><span class="mi"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3.5 20v-1.5A5.5 5.5 0 0 1 9 13h0a5.5 5.5 0 0 1 5.5 5.5V20M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 3.5 4.8V20"/></svg></span>고객관리</button>
+      <button class="menu-item" data-view="visits"><span class="mi"><svg viewBox="0 0 24 24"><path d="M7 3v5M17 3v5M4 9h16M5 5.5h14a1 1 0 0 1 1 1V20H4V6.5a1 1 0 0 1 1-1Z"/><path d="M8 13h3M8 16h5"/></svg></span>방문기록</button>
+      <button class="menu-item" data-view="calendar"><span class="mi"><svg viewBox="0 0 24 24"><path d="M7 3v4M17 3v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="M8 13h2M14 13h2M8 17h2M14 17h2"/></svg></span>캘린더</button>
+      <button class="menu-item" data-view="callbacks"><span class="mi"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg></span>오늘의 콜백</button>
+      <button class="menu-item" data-view="search"><span class="mi"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span>고객검색</button>
+      <button class="menu-item" data-view="sales-detail"><span class="mi"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>월간 대시보드</button>
       <div class="menu-divider"></div>
-      <button class="menu-item" data-view="settings"><span class="mi">⚙</span>설정 · 데이터</button>
-      <button class="menu-item" id="globalAddCustomer"><span class="mi">＋</span>고객 바로 등록</button>
+      <button class="menu-item" data-view="settings"><span class="mi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg></span>설정 · 데이터</button>
+      <button class="menu-item" id="globalAddCustomer"><span class="mi"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2.5 21v-2A6.5 6.5 0 0 1 9 12.5M18 11v8M14 15h8"/></svg></span>고객 바로 등록</button>
     </div>
     <div class="menu-bottom">
       <div class="menu-account"><small>로그인 계정</small><b id="menuAccountEmail">-</b></div>
@@ -453,7 +472,40 @@ input,select,textarea{font-size:16px}
         <div class="account-row"><div><small>로그인 계정</small><b id="accountEmail">-</b><div id="syncStatus" class="sync-pill"><span class="sync-dot"></span><span>클라우드 연결 준비 중</span></div></div><button class="ghost-btn" id="signOutBtn">로그아웃</button></div>
         <button class="ghost-btn full" id="sampleBtn">샘플 데이터 불러오기</button>
       </details>
+
+      <details class="panel data-panel inquiry-form">
+        <summary>문의하기</summary>
+        <label class="field-label" for="inquiryCategory">문의 종류</label>
+        <select id="inquiryCategory" class="large-input"><option>기능 요청</option><option>버그 제보</option><option>사용 문의</option><option>기타</option></select>
+        <label class="field-label" for="inquiryMessage">문의 내용</label>
+        <textarea id="inquiryMessage" class="large-input" placeholder="필요한 기능이나 문제 상황을 자세히 적어주세요."></textarea>
+        <button class="secondary-btn full" id="submitInquiryBtn" style="margin-top:10px">문의 보내기</button>
+        <div id="inquirySubmitMessage" class="auth-message"></div>
+      </details>
+
+      <div id="adminEntry" class="admin-only">
+        <button class="primary-btn full" id="openAdminBtn">관리자 센터</button>
+      </div>
     </section>
+
+    <section id="admin" class="view">
+      <div class="screen-title"><div><h1>관리자 센터</h1><p>MY CLIENT BOOK 운영 현황</p></div><button class="text-btn" data-go="settings">← 설정</button></div>
+      <div class="admin-nav" id="adminNav">
+        <button class="active" data-admin-pane="overview">홈</button><button data-admin-pane="users">가입자</button><button data-admin-pane="codes">이용코드</button><button data-admin-pane="inquiries">문의함</button><button data-admin-pane="data">고객·방문</button><button data-admin-pane="system">시스템</button><button data-admin-pane="logs">로그</button>
+      </div>
+      <div id="admin-overview" class="admin-pane active"><div id="adminMetrics" class="admin-grid"></div></div>
+      <div id="admin-users" class="admin-pane"><div class="admin-filters"><input id="adminUserSearch" placeholder="이름 또는 이메일 검색"><button class="secondary-btn" id="adminUserSearchBtn">검색</button></div><div id="adminUsersList" class="stack"></div></div>
+      <div id="admin-codes" class="admin-pane">
+        <div class="panel"><div class="panel-head"><div><h2>이용코드 생성</h2><p>생성된 원문 코드는 이 화면에서 한 번만 확인할 수 있습니다.</p></div></div><div class="admin-filters"><input id="adminCodeCount" type="number" min="1" max="50" value="10"><button class="secondary-btn" id="adminGenerateCodesBtn">생성</button></div><button class="ghost-btn full" id="adminExportCodesBtn">코드 현황 CSV</button><div id="generatedCodes" class="generated-codes" hidden></div></div>
+        <div id="adminCodesList" class="stack"></div>
+      </div>
+      <div id="admin-inquiries" class="admin-pane"><div id="adminInquiriesList" class="stack"></div></div>
+      <div id="admin-data" class="admin-pane"><div class="admin-filters"><input id="adminDataSearch" placeholder="고객명·뒤4자리·계정 이메일"><button class="secondary-btn" id="adminDataSearchBtn">검색</button></div><div class="filter-chips"><button class="active" data-admin-data="customers">고객DB</button><button data-admin-data="visits">방문·매출</button></div><div id="adminDataList" class="stack"></div></div>
+      <div id="admin-system" class="admin-pane"><div class="panel"><h2 style="font-size:17px;margin-top:0">서비스 공지</h2><div class="system-toggle"><label for="systemNoticeEnabled">공지 표시</label><input id="systemNoticeEnabled" type="checkbox"></div><input id="systemNoticeTitle" placeholder="공지 제목"><textarea id="systemNoticeMessage" class="large-input" placeholder="공지 내용" style="margin-top:9px"></textarea><div class="system-toggle"><label for="systemMaintenance">점검 모드</label><input id="systemMaintenance" type="checkbox"></div><button class="primary-btn full" id="saveSystemConfigBtn">시스템 설정 저장</button></div></div>
+      <div id="admin-logs" class="admin-pane"><div id="adminLogsList" class="stack"></div></div>
+    </section>
+
+    <div class="creator-mark">MY CLIENT BOOK / Created by <b>HenryLAB</b></div>
   </main>
 
   <!-- CUSTOMER MODAL -->
@@ -497,6 +549,8 @@ const LOCAL_RELEASE={version:'2.12',date:'2026-09-04',features:['홈 화면에 M
 let latestRelease=LOCAL_RELEASE;
 let authEntering=false;
 let recoveryMode=false;
+let isOwner=false;
+let adminCache={dashboard:null,users:[],codes:[],inquiries:[],customers:[],visits:[],logs:[],system:null};
 function clearAuthUrl(){
   if(window.location.hash||window.location.search.includes('code=')||window.location.search.includes('error=')||window.location.search.includes('recovery=1')){
     history.replaceState({},document.title,window.location.pathname);
@@ -680,7 +734,7 @@ async function fetchEntitlement(){
 }
 function showAccess(message='',cls=''){
   const ov=document.getElementById('accessOverlay'),msg=document.getElementById('accessMessage');
-  authOverlay.classList.add('hidden');ov.classList.remove('hidden');
+  authOverlay.classList.add('hidden');signupOverlay.classList.add('hidden');ov.classList.remove('hidden');
   msg.textContent=message||'크몽 구매 후 받은 1회용 이용코드를 입력해주세요.';msg.className='auth-message '+cls;
 }
 function hideAccess(){document.getElementById('accessOverlay')?.classList.add('hidden');}
@@ -700,9 +754,14 @@ async function verifyEntitlement(){
 }
 function showAuth(message='',cls=''){
   document.getElementById('resetOverlay')?.classList.add('hidden');
+  document.getElementById('signupOverlay')?.classList.add('hidden');
   authOverlay.classList.remove('hidden');authMessage.textContent=message||'로그인하면 여러 기기에서 같은 고객 데이터를 사용할 수 있습니다.';authMessage.className='auth-message '+cls;
 }
 function hideAuth(){authOverlay.classList.add('hidden');}
+function showSignup(message='',cls=''){
+  authOverlay.classList.add('hidden');document.getElementById('resetOverlay')?.classList.add('hidden');hideAccess();
+  signupOverlay.classList.remove('hidden');signupMessage.textContent=message||'이메일 인증 후 로그인하면 이용권을 등록할 수 있습니다.';signupMessage.className='auth-message '+cls;
+}
 async function enterSession(user){
   if(!user||authEntering)return;
   if(currentUser?.id===user.id&&cloudReady){hideAuth();hideAccess();clearAuthUrl();return;}
@@ -710,12 +769,15 @@ async function enterSession(user){
   const cached=loadAccountLocal(user.id);
   state=cached||clone(legacyState||emptyState());
   try{
+    const {data:ownerFlag}=await sb.rpc('is_app_owner');isOwner=ownerFlag===true;
+    adminEntry.classList.toggle('show',isOwner);
     const allowed=await verifyEntitlement();
     if(!allowed){cloudReady=false;state=emptyState();renderAll();clearAuthUrl();return;}
     hideAccess();
     await loadCloudState();
+    sb.rpc('touch_user_activity',{p_app_version:APP_VERSION}).catch(()=>{});
     localStorage.setItem(`myClientBook_migrated_${user.id}`,'1');
-    hideAuth();clearAuthUrl();setView('home');
+    hideAuth();signupOverlay.classList.add('hidden');clearAuthUrl();setView('home');
   }catch(e){
     console.error(e);
     if(cached&&navigator.onLine===false&&entitlementAllowed(loadEntitlementCache(user.id))){
@@ -747,16 +809,21 @@ authLoginBtn.addEventListener('click',async()=>{
   const {data,error}=await sb.auth.signInWithPassword({email,password});authLoginBtn.disabled=false;
   if(error)return showAuth(friendlyAuthError(error,'login'),'error');await enterSession(data.user);
 });
+showSignupBtn.addEventListener('click',()=>{signupEmail.value=authEmail.value.trim();showSignup();});
+showLoginBtn.addEventListener('click',()=>{authEmail.value=signupEmail.value.trim();showAuth();});
 authSignupBtn.addEventListener('click',async()=>{
-  const email=authEmail.value.trim(),password=authPassword.value;if(!email||password.length<6)return showAuth('이메일과 6자 이상 비밀번호를 입력하세요.','error');
-  authSignupBtn.disabled=true;authMessage.textContent='계정 생성 중…';
-  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:APP_REDIRECT_URL}});authSignupBtn.disabled=false;
-  if(error)return showAuth(friendlyAuthError(error,'signup'),'error');
+  const name=signupName.value.trim(),email=signupEmail.value.trim(),password=signupPassword.value,password2=signupPassword2.value;
+  if(name.length<1)return showSignup('이름 또는 활동명을 입력해주세요.','error');
+  if(!email||password.length<6)return showSignup('이메일과 6자 이상 비밀번호를 입력하세요.','error');
+  if(password!==password2)return showSignup('비밀번호가 서로 일치하지 않습니다.','error');
+  authSignupBtn.disabled=true;signupMessage.textContent='계정 생성 중…';
+  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:APP_REDIRECT_URL,data:{display_name:name}}});authSignupBtn.disabled=false;
+  if(error)return showSignup(friendlyAuthError(error,'signup'),'error');
   const identities=data?.user?.identities;
   if(data?.user&&Array.isArray(identities)&&identities.length===0){
-    return showAuth('이미 가입된 이메일입니다. 기존 계정으로 로그인하거나 비밀번호 재설정을 이용해주세요.','error');
+    return showSignup('이미 가입된 이메일입니다. 기존 계정으로 로그인하거나 비밀번호 재설정을 이용해주세요.','error');
   }
-  if(data.session)await enterSession(data.user);else showAuth('회원가입 요청을 확인했습니다. 신규 계정이면 인증 메일을 확인해주세요. 이미 가입한 이메일이라면 새 계정은 생성되지 않으니 로그인 또는 비밀번호 재설정을 이용해주세요.','ok');
+  if(data.session)await enterSession(data.user);else showSignup('인증 메일을 보냈습니다. 메일에서 인증을 완료한 뒤 로그인해주세요.','ok');
 });
 function showResetRequest(){
   recoveryMode=false;authOverlay.classList.add('hidden');hideAccess();
@@ -786,7 +853,7 @@ resetSaveBtn.addEventListener('click',async()=>{
   if(error){resetMessage.textContent=error.message||'비밀번호 변경에 실패했습니다.';resetMessage.className='auth-message error';return;}
   recoveryMode=false;clearAuthUrl();await sb.auth.signOut();resetOverlay.classList.add('hidden');showAuth('비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.','ok');
 });
-signOutBtn.addEventListener('click',async()=>{await sb.auth.signOut();currentUser=null;cloudReady=false;cloudSnapshot=null;state=emptyState();accountEmail.textContent='-';menuAccountEmail.textContent='-';renderAll();hideAccess();showAuth('로그아웃되었습니다.');});
+signOutBtn.addEventListener('click',async()=>{await sb.auth.signOut();currentUser=null;isOwner=false;adminEntry.classList.remove('show');cloudReady=false;cloudSnapshot=null;state=emptyState();accountEmail.textContent='-';menuAccountEmail.textContent='-';renderAll();hideAccess();showAuth('로그아웃되었습니다.');});
 document.getElementById('activateCodeBtn').addEventListener('click',async()=>{
   const btn=document.getElementById('activateCodeBtn'),input=document.getElementById('accessCode'),msg=document.getElementById('accessMessage');
   const code=input.value.trim();if(!code){msg.textContent='이용코드를 입력해주세요.';msg.className='auth-message error';return;}
@@ -801,6 +868,7 @@ document.getElementById('activateCodeBtn').addEventListener('click',async()=>{
 document.getElementById('accessSignOutBtn').addEventListener('click',async()=>{await sb.auth.signOut();hideAccess();currentUser=null;cloudReady=false;cloudSnapshot=null;state=emptyState();renderAll();showAuth('다른 계정으로 로그인해주세요.');});
 document.getElementById('accessCode').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('activateCodeBtn').click();});
 [authEmail,authPassword].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter')authLoginBtn.click();}));
+[signupName,signupEmail,signupPassword,signupPassword2].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter')authSignupBtn.click();}));
 async function bootstrapAuth(){
   const urlErr=authErrorFromUrl();
   if(urlErr){showAuth(decodeURIComponent(urlErr.replace(/\+/g,' ')),'error');clearAuthUrl();return;}
@@ -833,6 +901,7 @@ homeBrand?.addEventListener('click',()=>setView('home'));
 homeBrand?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setView('home');}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
 function setView(view){
+  if(view==='admin'&&!isOwner)return;
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));
   document.querySelectorAll('.menu-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   closeMenu();
@@ -1152,6 +1221,87 @@ sampleBtn.addEventListener('click',()=>{
     {id:uid(),customerId:c.id,date:'2026-08-23',type:'신규',service:'디자인컷',serviceAmount:45000,discount:0,retail:0,cycle:28,status:'미연락',next:'',memo:'앞머리 가볍게'}
   );state.dailyNotes.push({id:uid(),date:'2026-09-02',memo:'오후 촬영 준비 · 제품 재고 확인'});saveState();toast('샘플을 추가했습니다.');
 });
+
+// SUPPORT + OWNER ADMIN
+submitInquiryBtn.addEventListener('click',async()=>{
+  const message=inquiryMessage.value.trim();if(message.length<2){inquirySubmitMessage.textContent='문의 내용을 입력해주세요.';inquirySubmitMessage.className='auth-message error';return;}
+  submitInquiryBtn.disabled=true;inquirySubmitMessage.textContent='문의 전송 중…';inquirySubmitMessage.className='auth-message';
+  const {error}=await sb.rpc('submit_support_inquiry',{p_category:inquiryCategory.value,p_message:message,p_app_version:APP_VERSION});submitInquiryBtn.disabled=false;
+  if(error){inquirySubmitMessage.textContent=error.message||'문의 전송에 실패했습니다.';inquirySubmitMessage.className='auth-message error';return;}
+  inquiryMessage.value='';inquirySubmitMessage.textContent='문의가 접수되었습니다.';inquirySubmitMessage.className='auth-message ok';
+});
+const koDate=v=>v?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v)):'-';
+const koDateTime=v=>v?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(v)):'-';
+const statusKo=s=>({active:'활성',pending:'미활성',revoked:'정지',expired:'만료'}[s]||s||'미활성');
+const sourceKo=s=>({owner:'Owner',signup:'가입',kmong_code:'이용코드',admin_grant:'관리자 직접 활성화',admin:'관리자'}[s]||s||'-');
+async function adminRpc(name,args={}){
+  if(!isOwner)throw new Error('관리자 권한이 없습니다.');
+  const {data,error}=await sb.rpc(name,args);if(error)throw error;return data;
+}
+function ensureOwner(){if(!isOwner){alert('관리자 권한이 없습니다.');setView('settings');return false;}return true;}
+async function loadAdminOverview(){
+  const d=await adminRpc('admin_dashboard');adminCache.dashboard=d||{};
+  const metrics=[['가입자',d.total_users],['활성 계정',d.active_users],['미활성 계정',d.inactive_users],['정지·만료',d.revoked_users],['고객DB',d.customers],['방문기록',d.visits],['전체 문의',d.inquiries],['처리할 문의',d.open_inquiries],['전체 코드',d.codes_total],['미사용 코드',d.codes_unused],['사용완료 코드',d.codes_redeemed],['오늘 가입',d.today_signups]];
+  adminMetrics.innerHTML=metrics.map(x=>`<div class="admin-metric"><span>${esc(x[0])}</span><strong>${Number(x[1]||0).toLocaleString()}</strong></div>`).join('');
+}
+async function loadAdminUsers(){
+  const rows=await adminRpc('admin_list_users',{p_search:adminUserSearch.value.trim()});adminCache.users=rows||[];
+  adminUsersList.innerHTML=rows?.length?rows.map(u=>`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(u.display_name||'-')}</h3><p>${esc(u.email||'-')}<br>가입 ${koDate(u.joined_at)}</p></div><span class="badge ${u.entitlement_status==='active'?'green':u.entitlement_status==='pending'?'gray':'red'}">${statusKo(u.entitlement_status)}</span></div><div class="admin-meta"><span>활성화: ${sourceKo(u.entitlement_source)}</span><span>처리일: ${koDate(u.activated_at||u.activation_redeemed_at||u.status_changed_at)}</span><span>코드: ${esc(u.activation_label||'미사용')}</span><span>코드 사용일: ${koDate(u.activation_redeemed_at)}</span><span>고객 ${u.customer_count||0}</span><span>방문 ${u.visit_count||0}</span><span>최근 접속 ${koDateTime(u.last_seen_at)}</span></div>${u.activation_note?`<p>관리자 메모: ${esc(u.activation_note)}</p>`:''}${u.entitlement_source!=='owner'?`<div class="admin-card-actions">${u.entitlement_status==='active'?`<button class="danger" data-user-id="${u.user_id}" data-user-action="revoked">계정 정지</button>`:`<button data-user-id="${u.user_id}" data-user-action="active">직접 활성화</button>`}<button data-user-id="${u.user_id}" data-user-action="pending">미활성 전환</button></div>`:''}</article>`).join(''):'<div class="admin-empty">가입자가 없습니다.</div>';
+  [...adminUsersList.querySelectorAll('[data-user-action]')].forEach(b=>b.addEventListener('click',()=>changeUserEntitlement(adminCache.users.find(u=>u.user_id===b.dataset.userId),b.dataset.userAction)));
+}
+async function changeUserEntitlement(user,status){
+  const action=status==='active'?'직접 활성화':status==='revoked'?'계정 정지':'미활성 전환';
+  if(!confirm(`${user.display_name} 계정을 '${action}' 처리할까요?`))return;
+  if(status==='revoked'&&!confirm('정지 즉시 해당 사용자는 앱 데이터에 접근할 수 없습니다. 정말 계속할까요?'))return;
+  const note=prompt('관리자 메모를 입력해주세요. (선택)','')??null;if(note===null)return;
+  try{await adminRpc('admin_set_entitlement',{p_user_id:user.user_id,p_status:status,p_note:note});toast(action+' 완료');await Promise.all([loadAdminUsers(),loadAdminOverview()]);}catch(e){alert(e.message);}
+}
+async function loadAdminCodes(){
+  const rows=await adminRpc('admin_list_activation_codes');adminCache.codes=rows||[];
+  adminCodesList.innerHTML=rows?.length?rows.map(c=>{const used=!!c.redeemed_at,label=used?'사용완료':c.is_active?'미사용':'비활성';return`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(c.label||'코드')}</h3><p>생성 ${koDate(c.created_at)}${used?`<br>${esc(c.redeemed_name||'-')} · ${esc(c.redeemed_email||'-')} · ${koDate(c.redeemed_at)}`:''}</p></div><span class="badge ${used?'green':c.is_active?'gray':'red'}">${label}</span></div>${!used?`<div class="admin-card-actions"><button class="${c.is_active?'danger':''}" data-code-toggle>${c.is_active?'비활성화':'다시 활성화'}</button></div>`:''}</article>`}).join(''):'<div class="admin-empty">이용코드가 없습니다.</div>';
+  [...adminCodesList.querySelectorAll('[data-code-toggle]')].forEach((b,i)=>{const c=adminCache.codes.filter(x=>!x.redeemed_at)[i];b.addEventListener('click',()=>toggleAdminCode(c));});
+}
+async function toggleAdminCode(code){
+  const next=!code.is_active,action=next?'다시 활성화':'비활성화';
+  if(!confirm(`${code.label} 코드를 ${action}할까요?`))return;
+  if(!next&&!confirm('비활성화하면 해당 코드를 아직 전달받은 사용자도 등록할 수 없습니다. 계속할까요?'))return;
+  const note=prompt('관리자 메모를 입력해주세요. (선택)','')??null;if(note===null)return;
+  try{await adminRpc('admin_set_activation_code_active',{p_code_id:code.code_id,p_active:next,p_note:note});toast('코드 '+action+' 완료');await Promise.all([loadAdminCodes(),loadAdminOverview()]);}catch(e){alert(e.message);}
+}
+adminGenerateCodesBtn.addEventListener('click',async()=>{
+  const count=Math.max(1,Math.min(50,Number(adminCodeCount.value||10)));if(!confirm(`새 이용코드 ${count}개를 생성할까요?`))return;
+  adminGenerateCodesBtn.disabled=true;try{const rows=await adminRpc('admin_generate_activation_codes',{p_count:count});generatedCodes.hidden=false;generatedCodes.textContent=rows.map(x=>`${x.label},${x.code}`).join('\n');downloadCSV(`MY_CLIENT_BOOK_new_codes_${todayISO()}.csv`,[['관리번호','이용코드'],...rows.map(x=>[x.label,x.code])]);await Promise.all([loadAdminCodes(),loadAdminOverview()]);}catch(e){alert(e.message);}finally{adminGenerateCodesBtn.disabled=false;}
+});
+adminExportCodesBtn.addEventListener('click',()=>downloadCSV(`MY_CLIENT_BOOK_code_status_${todayISO()}.csv`,[['관리번호','상태','사용계정','사용일','생성일'],...adminCache.codes.map(c=>[c.label,c.redeemed_at?'사용완료':c.is_active?'미사용':'비활성',c.redeemed_email||'',koDate(c.redeemed_at),koDate(c.created_at)])]));
+async function loadAdminInquiries(){
+  const rows=await adminRpc('admin_list_inquiries');adminCache.inquiries=rows||[];
+  adminInquiriesList.innerHTML=rows?.length?rows.map(i=>`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(i.category)} · ${esc(i.display_name||'-')}</h3><p>${esc(i.email||'-')} · ${koDateTime(i.created_at)}</p></div><span class="badge ${i.status==='완료'?'green':i.status==='확인 중'?'orange':'gray'}">${esc(i.status)}</span></div><p style="color:var(--ink);white-space:pre-wrap;margin-top:12px">${esc(i.message)}</p><label class="field-label">관리자 메모</label><textarea class="large-input admin-inquiry-note">${esc(i.admin_note||'')}</textarea><div class="admin-card-actions"><button data-inquiry-status="새 문의">새 문의</button><button data-inquiry-status="확인 중">확인 중</button><button data-inquiry-status="완료">완료</button></div></article>`).join(''):'<div class="admin-empty">문의가 없습니다.</div>';
+  [...adminInquiriesList.querySelectorAll('[data-inquiry-status]')].forEach(b=>b.addEventListener('click',()=>{const card=b.closest('.admin-card'),idx=[...adminInquiriesList.children].indexOf(card);updateInquiry(adminCache.inquiries[idx],b.dataset.inquiryStatus,card.querySelector('.admin-inquiry-note').value);}));
+}
+async function updateInquiry(item,status,note){
+  if(!confirm(`문의 상태를 '${status}'(으)로 변경할까요?`))return;
+  try{await adminRpc('admin_update_inquiry',{p_inquiry_id:item.inquiry_id,p_status:status,p_admin_note:note});toast('문의 상태를 변경했습니다.');await Promise.all([loadAdminInquiries(),loadAdminOverview()]);}catch(e){alert(e.message);}
+}
+let adminDataType='customers';
+async function loadAdminData(){
+  if(adminDataType==='customers'){
+    const rows=await adminRpc('admin_list_customers',{p_user_id:null,p_search:adminDataSearch.value.trim(),p_limit:500});adminCache.customers=rows||[];
+    adminDataList.innerHTML=rows?.length?rows.map(c=>`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(c.customer_name)} · ${esc(c.phone_last4)}</h3><p>${esc(c.owner_name)} · ${esc(c.owner_email)}</p></div><span class="badge gray">방문 ${c.visit_count}</span></div><div class="admin-meta"><span>선호 ${esc(c.preferred_style||'-')}</span><span>최근 방문 ${koDate(c.last_visit)}</span><span>등록 ${koDate(c.created_at)}</span></div>${c.memo?`<p>${esc(c.memo)}</p>`:''}</article>`).join(''):'<div class="admin-empty">고객 데이터가 없습니다.</div>';
+  }else{
+    const rows=await adminRpc('admin_list_visits',{p_user_id:null,p_limit:1000});adminCache.visits=rows||[];const q=adminDataSearch.value.trim().toLowerCase(),filtered=q?rows.filter(v=>[v.owner_name,v.owner_email,v.customer_name,v.phone_last4,v.service].some(x=>String(x||'').toLowerCase().includes(q))):rows;
+    adminDataList.innerHTML=filtered.length?filtered.map(v=>`<article class="admin-card"><div class="admin-card-head"><div><h3>${esc(v.customer_name)} · ${esc(v.service||'-')}</h3><p>${esc(v.owner_name)} · ${esc(v.owner_email)} · ${koDate(v.visit_date)}</p></div><b>${money(v.total_sales)}</b></div><div class="admin-meta"><span>미용 ${money(v.beauty_sales)}</span><span>점판 ${money(v.retail_sales)}</span><span>${esc(v.callback_status||'-')}</span></div></article>`).join(''):'<div class="admin-empty">방문 데이터가 없습니다.</div>';
+  }
+}
+async function loadAdminSystem(){const d=await adminRpc('admin_get_system_config');adminCache.system=d||{};systemNoticeEnabled.checked=!!d?.notice_enabled;systemNoticeTitle.value=d?.notice_title||'';systemNoticeMessage.value=d?.notice_message||'';systemMaintenance.checked=!!d?.maintenance_enabled;}
+saveSystemConfigBtn.addEventListener('click',async()=>{if(!confirm('서비스 공지와 시스템 설정을 저장할까요?'))return;if(systemMaintenance.checked&&!confirm('점검 모드는 전체 사용자에게 영향을 줄 수 있습니다. 정말 켤까요?'))return;try{await adminRpc('admin_update_system_config',{p_notice_enabled:systemNoticeEnabled.checked,p_notice_title:systemNoticeTitle.value,p_notice_message:systemNoticeMessage.value,p_maintenance_enabled:systemMaintenance.checked});toast('시스템 설정을 저장했습니다.');}catch(e){alert(e.message);}});
+async function loadAdminLogs(){const rows=await adminRpc('admin_list_audit_logs',{p_limit:300});adminCache.logs=rows||[];adminLogsList.innerHTML=rows?.length?rows.map(l=>`<article class="admin-card admin-log"><b>${esc(l.action)}</b><small>${koDateTime(l.created_at)} · ${esc(l.target_type||'-')} · ${esc(l.target_id||'-')}</small><p>${esc(JSON.stringify(l.details||{}))}</p></article>`).join(''):'<div class="admin-empty">관리자 로그가 없습니다.</div>';}
+const adminLoaders={overview:loadAdminOverview,users:loadAdminUsers,codes:loadAdminCodes,inquiries:loadAdminInquiries,data:loadAdminData,system:loadAdminSystem,logs:loadAdminLogs};
+async function openAdminPane(name){if(!ensureOwner())return;document.querySelectorAll('[data-admin-pane]').forEach(b=>b.classList.toggle('active',b.dataset.adminPane===name));document.querySelectorAll('.admin-pane').forEach(p=>p.classList.toggle('active',p.id==='admin-'+name));try{await adminLoaders[name]();}catch(e){alert(e.message);}}
+adminNav.addEventListener('click',e=>{const b=e.target.closest('[data-admin-pane]');if(b)openAdminPane(b.dataset.adminPane);});
+openAdminBtn.addEventListener('click',()=>{if(!ensureOwner())return;setView('admin');openAdminPane('overview');});
+adminUserSearchBtn.addEventListener('click',loadAdminUsers);adminUserSearch.addEventListener('keydown',e=>{if(e.key==='Enter')loadAdminUsers();});
+adminDataSearchBtn.addEventListener('click',loadAdminData);adminDataSearch.addEventListener('keydown',e=>{if(e.key==='Enter')loadAdminData();});
+document.querySelectorAll('[data-admin-data]').forEach(b=>b.addEventListener('click',()=>{adminDataType=b.dataset.adminData;document.querySelectorAll('[data-admin-data]').forEach(x=>x.classList.toggle('active',x===b));loadAdminData();}));
 
 function renderAll(){renderHome();renderCustomers();renderRecentVisits();renderCallbacks();renderMonthlyDashboard();renderCalendar();if(searchResult.innerHTML&&sName.value)searchCustomer();}
 
