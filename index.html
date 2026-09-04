@@ -86,6 +86,7 @@ input,select,textarea{font-size:16px}
 .admin-only{display:none}.admin-only.show{display:block}.admin-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}.admin-nav::-webkit-scrollbar{display:none}.admin-nav button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:800}.admin-nav button.active{background:var(--dark);color:#fff;border-color:var(--dark)}
 .admin-pane{display:none}.admin-pane.active{display:block}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.admin-metric{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:14px}.admin-metric span{display:block;color:var(--muted);font-size:11px}.admin-metric strong{display:block;margin-top:6px;font-size:22px}.admin-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px}.admin-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.admin-card h3{margin:0;font-size:15px}.admin-card p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.admin-card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.admin-card-actions button{border:0;border-radius:10px;padding:9px 10px;background:var(--sage2);font-size:11px;font-weight:800}.admin-card-actions button.danger{background:var(--dangerbg);color:var(--danger)}.admin-filters{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px}.admin-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.admin-meta span{background:var(--sage3);border-radius:8px;padding:5px 7px;font-size:10px;color:var(--muted)}.admin-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}.generated-codes{white-space:pre-wrap;background:#19211D;color:#E6EEE8;border-radius:14px;padding:13px;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:280px;overflow:auto;margin-top:10px}.inquiry-form textarea{min-height:130px}.system-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}.system-toggle input{width:22px;height:22px}.admin-wide{overflow-x:auto}.admin-log{font-size:12px;line-height:1.5}.admin-log b{display:block}.admin-log small{color:var(--muted)}
 .admin-card.clickable{cursor:pointer}.admin-card.clickable:active{transform:scale(.995)}.admin-detail-section{margin-top:18px}.admin-detail-section h3{font-size:16px;margin:0 0 10px}.admin-detail-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}.admin-detail-summary div{background:var(--sage3);border-radius:12px;padding:10px}.admin-detail-summary span{display:block;color:var(--muted);font-size:10px}.admin-detail-summary b{display:block;margin-top:5px;font-size:14px}.owner-lock{background:var(--sage3);border-radius:12px;padding:11px 12px;margin-top:12px;color:var(--muted);font-size:12px;line-height:1.5}.admin-detail-list{display:grid;gap:8px}.admin-detail-item{border:1px solid var(--line);background:#fff;border-radius:13px;padding:11px}.admin-detail-item b{font-size:13px}.admin-detail-item small{display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.45}.admin-user-sheet{max-height:96vh}
+.notice-current{background:var(--sage3);border-radius:15px;padding:14px;margin-bottom:12px}.notice-current.off{background:#F0EEEA}.notice-current small{display:block;color:var(--muted);font-size:11px}.notice-current b{display:block;font-size:16px;margin-top:5px}.notice-current p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.55;white-space:pre-wrap}.notice-popup-copy{white-space:pre-wrap;color:var(--muted);font-size:15px;line-height:1.7;margin:8px 0 18px}.notice-popup-sheet{padding-top:14px}.notice-popup-sheet .modal-head{align-items:flex-start}.notice-popup-sheet .modal-head h2{font-size:23px;line-height:1.35}
 @media(min-width:700px){.admin-grid{grid-template-columns:repeat(4,1fr)}}
 
 .menu-trigger{width:44px;height:44px;border:1px solid var(--line);border-radius:14px;background:var(--paper);display:grid;place-items:center;font-size:23px;font-weight:900;color:var(--dark);box-shadow:var(--shadow)}
@@ -197,6 +198,7 @@ input,select,textarea{font-size:16px}
       <button class="menu-item" data-view="search"><span class="mi"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span>고객검색</button>
       <button class="menu-item" data-view="sales-detail"><span class="mi"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>월간 대시보드</button>
       <div class="menu-divider"></div>
+      <button class="menu-item" id="reopenNoticeBtn"><span class="mi"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>공지사항</button>
       <button class="menu-item" data-view="settings"><span class="mi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg></span>설정 · 데이터</button>
       <button class="menu-item" id="globalAddCustomer"><span class="mi"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2.5 21v-2A6.5 6.5 0 0 1 9 12.5M18 11v8M14 15h8"/></svg></span>고객 바로 등록</button>
     </div>
@@ -501,7 +503,7 @@ input,select,textarea{font-size:16px}
         <div id="adminCodesList" class="stack"></div>
       </div>
       <div id="admin-inquiries" class="admin-pane"><div id="adminInquiriesList" class="stack"></div></div>
-      <div id="admin-system" class="admin-pane"><div class="panel"><h2 style="font-size:17px;margin-top:0">서비스 공지</h2><div class="system-toggle"><label for="systemNoticeEnabled">공지 표시</label><input id="systemNoticeEnabled" type="checkbox"></div><input id="systemNoticeTitle" placeholder="공지 제목"><textarea id="systemNoticeMessage" class="large-input" placeholder="공지 내용" style="margin-top:9px"></textarea><div class="system-toggle"><label for="systemMaintenance">점검 모드</label><input id="systemMaintenance" type="checkbox"></div><button class="primary-btn full" id="saveSystemConfigBtn">시스템 설정 저장</button></div></div>
+      <div id="admin-system" class="admin-pane"><div class="panel"><div class="panel-head"><div><h2>서비스 공지</h2><p>이용자에게 안내할 내용을 팝업으로 전달합니다.</p></div></div><div id="currentNoticePreview" class="notice-current off"><small>현재 상태</small><b>등록된 공지가 없습니다.</b></div><button class="primary-btn full" id="openNoticeEditorBtn">공지 등록</button><button class="ghost-btn full" id="disableNoticeBtn" style="margin-top:8px" hidden>공지 종료</button></div></div>
       <div id="admin-logs" class="admin-pane"><div id="adminLogsList" class="stack"></div></div>
     </section>
 
@@ -513,6 +515,28 @@ input,select,textarea{font-size:16px}
       <div class="modal-grab"></div>
       <div class="modal-head"><h2 id="adminUserDetailTitle">가입자 상세</h2><button class="icon-btn" id="closeAdminUserModal">×</button></div>
       <div id="adminUserDetailBody"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="adminNoticeModal" aria-hidden="true">
+    <div class="modal-sheet">
+      <div class="modal-grab"></div>
+      <div class="modal-head"><h2 id="adminNoticeModalTitle">공지 등록</h2><button class="icon-btn" id="closeAdminNoticeModal">×</button></div>
+      <label class="field-label" for="noticeEditorTitle">공지 제목</label>
+      <input id="noticeEditorTitle" class="large-input" maxlength="80" placeholder="예: 업데이트 안내" />
+      <label class="field-label" for="noticeEditorMessage">공지 내용</label>
+      <textarea id="noticeEditorMessage" class="large-input" maxlength="1000" placeholder="이용자에게 전달할 내용을 입력하세요."></textarea>
+      <div class="modal-actions"><button class="ghost-btn" id="cancelNoticeEditorBtn">취소</button><button class="primary-btn" id="publishNoticeBtn">공지하기</button></div>
+      <div id="noticeEditorMessageBox" class="auth-message"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="userNoticeModal" aria-hidden="true">
+    <div class="modal-sheet notice-popup-sheet">
+      <div class="modal-grab"></div>
+      <div class="modal-head"><div><small style="color:var(--sage);font-weight:800">MY CLIENT BOOK 공지</small><h2 id="userNoticeTitle" style="margin-top:6px">안내</h2></div></div>
+      <div id="userNoticeMessage" class="notice-popup-copy"></div>
+      <button class="primary-btn full" id="confirmUserNoticeBtn">확인</button>
     </div>
   </div>
 
@@ -785,7 +809,7 @@ async function enterSession(user){
     await loadCloudState();
     await sb.rpc('touch_user_activity',{p_app_version:APP_VERSION});
     localStorage.setItem(`myClientBook_migrated_${user.id}`,'1');
-    hideAuth();signupOverlay.classList.add('hidden');clearAuthUrl();setView('home');
+    hideAuth();signupOverlay.classList.add('hidden');clearAuthUrl();setView('home');await showCurrentSystemNotice();
   }catch(e){
     console.error(e);
     if(cached&&navigator.onLine===false&&entitlementAllowed(loadEntitlementCache(user.id))){
@@ -898,8 +922,9 @@ sb.auth.onAuthStateChange((event,session)=>{
 });
 window.addEventListener('offline',()=>{if(currentUser)setSyncStatus('오프라인 · 기기에 저장됨','syncing');});
 window.addEventListener('online',()=>{if(currentUser){setSyncStatus('다시 연결됨 · 동기화 중','syncing');retryCloudSync();}});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser)retryCloudSync();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){retryCloudSync();showCurrentSystemNotice();}});
 setInterval(()=>{if(currentUser&&cloudReady&&hasPending())retryCloudSync();},15000);
+setInterval(()=>{if(currentUser&&document.visibilityState==='visible')showCurrentSystemNotice();},60000);
 
 function openMenu(){sideMenu.classList.add('show');menuBackdrop.classList.add('show');sideMenu.setAttribute('aria-hidden','false');}
 function closeMenu(){sideMenu.classList.remove('show');menuBackdrop.classList.remove('show');sideMenu.setAttribute('aria-hidden','true');}
@@ -920,6 +945,7 @@ function setView(view){
   renderAll();
 }
 document.querySelectorAll('.menu-item[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+reopenNoticeBtn.addEventListener('click',()=>{closeMenu();showCurrentSystemNotice(true);});
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{setView(b.dataset.go);if(b.dataset.action==='add-customer')setTimeout(openCustomerModal,100);}));
 menuSignOutBtn.addEventListener('click',()=>{closeMenu();signOutBtn.click();});
 
@@ -1313,8 +1339,58 @@ async function updateInquiry(item,status,note){
   if(!confirm(`문의 상태를 '${status}'(으)로 변경할까요?`))return;
   try{await adminRpc('admin_update_inquiry',{p_inquiry_id:item.inquiry_id,p_status:status,p_admin_note:note});toast('문의 상태를 변경했습니다.');await Promise.all([loadAdminInquiries(),loadAdminOverview()]);}catch(e){alert(e.message);}
 }
-async function loadAdminSystem(){const d=await adminRpc('admin_get_system_config');adminCache.system=d||{};systemNoticeEnabled.checked=!!d?.notice_enabled;systemNoticeTitle.value=d?.notice_title||'';systemNoticeMessage.value=d?.notice_message||'';systemMaintenance.checked=!!d?.maintenance_enabled;}
-saveSystemConfigBtn.addEventListener('click',async()=>{if(!confirm('서비스 공지와 시스템 설정을 저장할까요?'))return;if(systemMaintenance.checked&&!confirm('점검 모드는 전체 사용자에게 영향을 줄 수 있습니다. 정말 켤까요?'))return;try{await adminRpc('admin_update_system_config',{p_notice_enabled:systemNoticeEnabled.checked,p_notice_title:systemNoticeTitle.value,p_notice_message:systemNoticeMessage.value,p_maintenance_enabled:systemMaintenance.checked});toast('시스템 설정을 저장했습니다.');}catch(e){alert(e.message);}});
+function renderAdminNotice(d={}){
+  adminCache.system=d;
+  const active=!!d.notice_enabled&&!!d.notice_title&&!!d.notice_message;
+  currentNoticePreview.classList.toggle('off',!active);
+  currentNoticePreview.innerHTML=active?`<small>공지 중</small><b>${esc(d.notice_title)}</b><p>${esc(d.notice_message)}</p>`:'<small>현재 상태</small><b>등록된 공지가 없습니다.</b>';
+  openNoticeEditorBtn.textContent=active?'공지 수정':'공지 등록';
+  disableNoticeBtn.hidden=!active;
+}
+async function loadAdminSystem(){const d=await adminRpc('admin_get_system_config');renderAdminNotice(d||{});}
+function openNoticeEditor(){
+  const d=adminCache.system||{};
+  adminNoticeModalTitle.textContent=d.notice_enabled?'공지 수정':'공지 등록';
+  noticeEditorTitle.value=d.notice_title||'';
+  noticeEditorMessage.value=d.notice_message||'';
+  noticeEditorMessageBox.textContent='';noticeEditorMessageBox.className='auth-message';
+  adminNoticeModal.classList.add('show');adminNoticeModal.setAttribute('aria-hidden','false');
+}
+function closeNoticeEditor(){adminNoticeModal.classList.remove('show');adminNoticeModal.setAttribute('aria-hidden','true');}
+openNoticeEditorBtn.addEventListener('click',openNoticeEditor);
+closeAdminNoticeModal.addEventListener('click',closeNoticeEditor);
+cancelNoticeEditorBtn.addEventListener('click',closeNoticeEditor);
+adminNoticeModal.addEventListener('click',e=>{if(e.target===adminNoticeModal)closeNoticeEditor();});
+publishNoticeBtn.addEventListener('click',async()=>{
+  const title=noticeEditorTitle.value.trim(),message=noticeEditorMessage.value.trim();
+  if(!title||!message){noticeEditorMessageBox.textContent='공지 제목과 내용을 모두 입력해주세요.';noticeEditorMessageBox.className='auth-message error';return;}
+  publishNoticeBtn.disabled=true;noticeEditorMessageBox.textContent='공지 등록 중…';noticeEditorMessageBox.className='auth-message';
+  try{
+    const d=await adminRpc('admin_update_system_config',{p_notice_enabled:true,p_notice_title:title,p_notice_message:message,p_maintenance_enabled:false});
+    renderAdminNotice(d||{});closeNoticeEditor();toast('이용자 공지를 등록했습니다.');
+  }catch(e){noticeEditorMessageBox.textContent=e.message||'공지를 등록하지 못했습니다.';noticeEditorMessageBox.className='auth-message error';}
+  finally{publishNoticeBtn.disabled=false;}
+});
+disableNoticeBtn.addEventListener('click',async()=>{
+  if(!confirm('현재 공지를 종료할까요?'))return;
+  const d=adminCache.system||{};
+  try{const next=await adminRpc('admin_update_system_config',{p_notice_enabled:false,p_notice_title:d.notice_title||'',p_notice_message:d.notice_message||'',p_maintenance_enabled:false});renderAdminNotice(next||{});toast('공지를 종료했습니다.');}catch(e){alert(e.message);}
+});
+let visibleNoticeKey='';
+async function showCurrentSystemNotice(force=false){
+  if(!currentUser)return;
+  if(!navigator.onLine){if(force)toast('인터넷 연결 후 공지를 확인해주세요.');return;}
+  try{
+    const {data,error}=await sb.rpc('get_system_notice');
+    if(error)throw error;
+    if(!data?.notice_enabled||!data.notice_title||!data.notice_message){if(force)toast('현재 등록된 공지가 없습니다.');return;}
+    const key='mcb_notice_seen_'+currentUser.id+'_'+String(data.updated_at||data.notice_title);
+    if(!force&&localStorage.getItem(key))return;
+    visibleNoticeKey=key;userNoticeTitle.textContent=data.notice_title;userNoticeMessage.textContent=data.notice_message;
+    userNoticeModal.classList.add('show');userNoticeModal.setAttribute('aria-hidden','false');
+  }catch(e){console.warn('notice unavailable');if(force)toast('공지를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');}
+}
+confirmUserNoticeBtn.addEventListener('click',()=>{if(visibleNoticeKey)localStorage.setItem(visibleNoticeKey,'1');userNoticeModal.classList.remove('show');userNoticeModal.setAttribute('aria-hidden','true');visibleNoticeKey='';});
 async function loadAdminLogs(){const rows=await adminRpc('admin_list_audit_logs',{p_limit:300});adminCache.logs=rows||[];adminLogsList.innerHTML=rows?.length?rows.map(l=>`<article class="admin-card admin-log"><b>${esc(l.action)}</b><small>${koDateTime(l.created_at)} · ${esc(l.target_type||'-')} · ${esc(l.target_id||'-')}</small><p>${esc(JSON.stringify(l.details||{}))}</p></article>`).join(''):'<div class="admin-empty">관리자 로그가 없습니다.</div>';}
 const adminLoaders={overview:loadAdminOverview,users:loadAdminUsers,codes:loadAdminCodes,inquiries:loadAdminInquiries,system:loadAdminSystem,logs:loadAdminLogs};
 async function openAdminPane(name){if(!ensureOwner())return;document.querySelectorAll('[data-admin-pane]').forEach(b=>b.classList.toggle('active',b.dataset.adminPane===name));document.querySelectorAll('.admin-pane').forEach(p=>p.classList.toggle('active',p.id==='admin-'+name));try{await adminLoaders[name]();}catch(e){alert(e.message);}}
