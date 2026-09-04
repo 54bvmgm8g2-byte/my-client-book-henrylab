@@ -775,7 +775,7 @@ async function enterSession(user){
     if(!allowed){cloudReady=false;state=emptyState();renderAll();clearAuthUrl();return;}
     hideAccess();
     await loadCloudState();
-    sb.rpc('touch_user_activity',{p_app_version:APP_VERSION}).catch(()=>{});
+    await sb.rpc('touch_user_activity',{p_app_version:APP_VERSION});
     localStorage.setItem(`myClientBook_migrated_${user.id}`,'1');
     hideAuth();signupOverlay.classList.add('hidden');clearAuthUrl();setView('home');
   }catch(e){
