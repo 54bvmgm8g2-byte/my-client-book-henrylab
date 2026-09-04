@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F5F1E9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MY CLIENT BOOK" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <style>:root{
+  --bg:#F5F1E9; --paper:#FFFCF7; --ink:#1F2A25; --muted:#7A817C;
+  --dark:#27342E; --sage:#6F8274; --sage2:#DCE6DD; --sage3:#EEF3EE;
+  --line:#DDD6CC; --beige:#EEE5D7; --danger:#A54444; --dangerbg:#F7DDDA;
+  --warn:#99621C; --warnbg:#F6E5C7; --ok:#47634E; --okbg:#DCE8DE;
+  --shadow:0 8px 24px rgba(39,52,46,.06);
+}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;width:100%;max-width:100%;overflow-x:hidden;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overscroll-behavior:none}
+html{min-height:100%;background:var(--bg)}
+body{min-height:100dvh;padding-bottom:0;-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+button,input,select,textarea{font:inherit;color:inherit}[hidden]{display:none!important}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+input,select,textarea{font-size:16px}
+.app-header{position:sticky;top:0;z-index:30;background:rgba(245,241,233,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(221,214,204,.8)}
+.header-inner{width:100%;max-width:760px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{cursor:pointer;-webkit-tap-highlight-color:transparent}.brand strong{display:block;font-size:18px;letter-spacing:.02em}.brand span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.app-shell{width:100%;max-width:760px;margin:0 auto;padding:14px 14px calc(16px + env(safe-area-inset-bottom));overscroll-behavior-y:contain}
+.view{display:none;width:100%}.view.active{display:block}
+.primary-btn,.secondary-btn,.ghost-btn,.text-btn,.icon-btn{border:0;border-radius:14px;font-weight:800}
+.primary-btn{background:var(--dark);color:#fff;padding:14px 16px}.primary-btn.compact{padding:11px 14px;white-space:nowrap}.primary-btn.full,.secondary-btn.full,.ghost-btn.full{width:100%}
+.secondary-btn{background:var(--sage2);color:var(--dark);padding:13px 14px}.ghost-btn{background:#fff;border:1px solid var(--line);padding:13px 14px}.text-btn{background:transparent;color:var(--sage);padding:6px 0}.icon-btn{width:38px;height:38px;background:transparent;font-size:24px;display:grid;place-items:center}
+.hero-card{background:linear-gradient(135deg,#27342E,#35473E);color:#fff;border-radius:24px;padding:22px 20px;box-shadow:var(--shadow)}
+.eyebrow{font-size:12px;color:#C9D5CD;font-weight:800}.hero-card h1{font-size:28px;margin:9px 0 7px}.hero-card p{margin:0;color:#DAE1DC;font-size:14px;line-height:1.55}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.quick-action{border:1px solid var(--line);background:var(--paper);border-radius:18px;text-align:left;padding:16px;box-shadow:var(--shadow)}.quick-action span{display:block;font-size:24px;margin-bottom:10px}.quick-action b{display:block;font-size:15px}.quick-action small{display:block;color:var(--muted);margin-top:4px}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.metric{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--shadow)}.metric span{display:block;color:var(--muted);font-size:11px;font-weight:700}.metric strong{display:block;font-size:22px;margin-top:6px}
+.panel{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);overflow:hidden}.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:13px}.panel-head h2{font-size:17px;margin:0}.panel-head p{font-size:12px;color:var(--muted);margin:4px 0 0}.stack{display:grid;gap:9px}
+.sales-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.sales-box{background:var(--sage3);border-radius:15px;padding:12px}.sales-box.total{background:var(--dark);color:#fff}.sales-box span{font-size:10px;color:var(--muted)}.sales-box.total span{color:#D6DED8}.sales-box strong{display:block;font-size:16px;margin-top:5px}.goal-block{margin-top:14px}.progress-track{height:9px;background:#E9E4DC;border-radius:999px;overflow:hidden}.progress-bar{height:100%;background:var(--sage);border-radius:999px}.goal-copy{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:7px;color:var(--muted)}
+.data-panel summary{font-weight:800;cursor:pointer;list-style:none}.data-panel summary::-webkit-details-marker{display:none}.data-panel[open] summary{margin-bottom:14px}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.settings-grid label{font-size:12px;color:var(--muted)}.settings-grid input{margin-top:6px}.button-grid{display:grid;gap:8px;margin-top:10px}.two-col{grid-template-columns:1fr 1fr}.search-candidates{display:grid;gap:10px}.search-candidate{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:18px;padding:16px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--ink)}.search-candidate:active{transform:scale(.99)}.search-candidate-main{display:flex;align-items:baseline;gap:8px;min-width:0}.search-candidate-main b{font-size:18px}.search-candidate-main span{font-size:14px;color:var(--muted);font-weight:700}.search-candidate-meta{font-size:12px;color:var(--muted);white-space:nowrap}.update-panel summary{font-weight:800;cursor:pointer;list-style:none}.update-panel summary::-webkit-details-marker{display:none}.update-panel[open] summary{margin-bottom:14px}.update-status-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.update-version{display:flex;flex-direction:column;gap:4px}.update-version small{color:var(--muted)}.update-version b{font-size:20px}.update-badge{padding:7px 10px;border-radius:999px;background:var(--sage3);color:var(--muted);font-size:12px;font-weight:800;white-space:nowrap}.update-badge.new{background:var(--sage2);color:var(--sage)}.release-notes{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}.release-notes h3{font-size:14px;margin:0 0 8px}.release-notes ul{margin:0 0 12px;padding-left:18px;color:var(--muted);line-height:1.6}.release-notes .release-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.release-notes .release-title b{font-size:15px}.release-notes .release-title span{font-size:12px;color:var(--muted)}.install-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.install-copy{min-width:0}.install-copy b{display:block;font-size:16px}.install-copy p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.install-status{margin-top:12px;padding:10px 12px;border-radius:13px;background:var(--sage3);font-size:12px;color:var(--muted)}.install-status.done{background:var(--okbg);color:var(--ok)}
+.screen-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:8px 2px 12px}.screen-title h1{margin:0;font-size:26px}.screen-title p{margin:3px 0 0;color:var(--muted);font-size:13px}.sticky-search{position:sticky;top:72px;z-index:15;padding:10px}.search-inline{position:relative}.search-inline input{padding-right:44px}.search-inline .icon-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%)}
+.large-input,input,select,textarea{display:block;width:100%;max-width:100%;min-width:0;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px 14px;outline:none;appearance:none;-webkit-appearance:none}.large-input:focus,input:focus,select:focus,textarea:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,130,116,.12)}textarea.large-input{min-height:96px;resize:vertical}.date-input{width:100%;max-width:100%;min-height:54px;text-align:left}.date-input::-webkit-date-and-time-value{text-align:left}
+.customer-card,.visit-card,.callback-card,.history-card{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow);overflow:hidden}.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.name-line b{font-size:17px}.name-line span{color:var(--muted);font-size:13px;margin-left:5px}.card-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}.meta-box{background:var(--sage3);border-radius:12px;padding:10px}.meta-box small{display:block;color:var(--muted);font-size:10px}.meta-box b{display:block;margin-top:4px;font-size:13px}.card-note{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.5}.card-actions{display:flex;gap:7px;margin-top:12px}.card-actions button{flex:1;padding:10px;border-radius:12px;border:0;font-size:12px;font-weight:800;background:var(--sage2);color:var(--dark)}.card-actions button.ghost{background:#fff;border:1px solid var(--line)}
+.visit-form-card{padding:0}.visit-form-card form{width:100%}.form-section{padding:17px 16px;border-bottom:1px solid var(--line)}.form-section:last-of-type{border-bottom:0}.form-section-title{display:flex;align-items:center;gap:9px;margin-bottom:16px}.form-section-title span{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--dark);color:#fff;font-size:12px;font-weight:800}.field-label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin:13px 0 7px}.form-section .field-label:first-of-type{margin-top:0}.segmented{display:grid;grid-template-columns:1fr 1fr;background:var(--beige);border-radius:14px;padding:4px}.segmented button{border:0;background:transparent;border-radius:11px;padding:11px;font-weight:800;color:var(--muted)}.segmented button.active{background:#fff;color:var(--dark);box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.picker-wrap{position:relative;width:100%}.picker-clear{position:absolute;right:6px;top:8px;z-index:2}.picker-wrap input{padding-right:44px}.picker-results{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:40;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 32px rgba(39,52,46,.16);max-height:310px;overflow-y:auto;display:none}.picker-results.show{display:block}.picker-option{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;border:0;background:#fff;padding:14px;border-bottom:1px solid #EEEAE3;text-align:left}.picker-option:last-child{border-bottom:0}.picker-option b{font-size:15px}.picker-option span{color:var(--muted);font-size:12px}.picker-empty{padding:16px;color:var(--muted);font-size:13px}.selected-customer{margin-top:10px;background:var(--sage2);border-radius:14px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}.selected-customer b{font-size:15px}.selected-customer span{font-size:12px;color:var(--muted)}.hidden{display:none!important}
+.total-pay-box{margin-top:14px;background:var(--dark);color:#fff;border-radius:16px;padding:15px;display:flex;justify-content:space-between;align-items:center;gap:10px}.total-pay-box span{font-size:12px;color:#D2DAD5}.total-pay-box strong{font-size:21px}.save-bar{padding:15px 16px;display:flex;gap:8px;background:var(--paper)}.save-bar .primary-btn{flex:1}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:800;white-space:nowrap}.badge.red{background:var(--dangerbg);color:var(--danger)}.badge.orange,.badge.yellow{background:var(--warnbg);color:var(--warn)}.badge.green{background:var(--okbg);color:var(--ok)}.badge.gray{background:#ECEBE7;color:#555D58}.badge.beige{background:var(--beige);color:#7C6240}
+.visit-head,.callback-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}.visit-date{font-size:12px;color:var(--muted)}.visit-service{font-size:16px;font-weight:800;margin-top:4px}.visit-amount{font-size:15px;font-weight:800}.visit-extra{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;color:var(--muted);font-size:12px}.visit-extra span{background:var(--sage3);padding:6px 8px;border-radius:9px}
+.filter-chips{display:flex;gap:7px;overflow-x:auto;padding:0 2px 11px;scrollbar-width:none}.filter-chips::-webkit-scrollbar{display:none}.filter-chips button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:800;color:var(--muted)}.filter-chips button.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.callback-card .due-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.callback-card .service-line{font-size:13px;color:var(--muted)}.callback-status{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:12px}.callback-status button{border:0;border-radius:11px;padding:10px;background:var(--sage2);font-size:12px;font-weight:800}.callback-status button.ghost{background:#fff;border:1px solid var(--line)}
+.search-form{display:grid;grid-template-columns:1fr 120px;gap:8px}.search-form .full{grid-column:1/-1}.profile-card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}.profile-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.profile-title h2{font-size:24px;margin:0}.profile-title h2 span{font-size:16px;color:var(--muted)}.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.profile-stat{background:var(--sage2);border-radius:15px;padding:12px}.profile-stat span{display:block;color:var(--muted);font-size:10px}.profile-stat b{display:block;margin-top:5px;font-size:18px}.profile-copy{padding:10px 0;border-top:1px solid var(--line)}.profile-copy small{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.history-card .history-top{display:flex;justify-content:space-between;gap:10px}.history-card .history-pay{font-weight:800}.history-card .history-memo{color:var(--muted);font-size:12px;margin-top:9px;line-height:1.45}
+.empty{background:var(--paper);border:1px dashed var(--line);border-radius:18px;padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}.toast{position:fixed;left:50%;top:78px;transform:translateX(-50%) translateY(-8px);background:var(--dark);color:#fff;padding:11px 15px;border-radius:12px;z-index:100;opacity:0;pointer-events:none;transition:.2s;white-space:nowrap}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.modal{position:fixed;inset:0;background:rgba(24,30,27,.42);z-index:80;display:none;align-items:flex-end}.modal.show{display:flex}.modal-sheet{width:100%;max-width:760px;margin:0 auto;background:var(--bg);border-radius:24px 24px 0 0;padding:8px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overscroll-behavior:contain}.modal-grab{width:42px;height:5px;border-radius:999px;background:#CFCCC5;margin:4px auto 12px}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.modal-head h2{margin:0;font-size:21px}.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+@media(min-width:700px){
+  .quick-grid{grid-template-columns:repeat(4,1fr)}.metric-grid{grid-template-columns:repeat(4,1fr)}.app-shell{padding-top:18px}.customer-card .card-meta{grid-template-columns:repeat(4,1fr)}
+}
+@media(max-width:380px){
+  .brand strong{font-size:16px}.primary-btn.compact{padding:10px 11px}.sales-summary{grid-template-columns:1fr 1fr}.sales-box.total{grid-column:1/-1}.search-form{grid-template-columns:1fr 102px}
+}
+
+/* v2.1 mobile polish */
+.sales-summary{grid-template-columns:1fr 1fr;align-items:stretch}
+.sales-box{min-height:88px;display:flex;flex-direction:column;justify-content:center}
+.sales-box.total{grid-column:1/-1;min-height:76px;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:12px;padding:14px 16px}
+.sales-box.total span{align-self:center;font-size:12px}
+.sales-box.total strong{margin:0;font-size:24px;line-height:1.1;text-align:right;white-space:nowrap;word-break:keep-all}
+.home-preview-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--sage3);border-radius:14px;padding:12px 13px}
+.home-preview-card>div{min-width:0}.home-preview-card b{display:block;font-size:14px}.home-preview-card span{display:block;color:var(--muted);font-size:11px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.home-preview-card strong{font-size:14px;white-space:nowrap}.home-preview-card em{font-style:normal;font-size:10px;color:var(--sage);margin-left:4px}
+.compact-empty{padding:18px 12px}
+.dashboard-metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.dashboard-metric{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--shadow)}.dashboard-metric span{display:block;color:var(--muted);font-size:11px;font-weight:700}.dashboard-metric strong{display:block;font-size:20px;margin-top:6px;word-break:keep-all}.dashboard-metric:last-child:nth-child(odd){grid-column:1/-1}
+.dashboard-goals{display:grid;gap:16px}.goal-row small{display:block;color:var(--muted);font-size:10px;margin-top:6px}.dashboard-sales{margin-top:2px}
+.money-section .total-pay-box{margin-top:16px}
+@media(max-width:380px){.sales-box.total{grid-column:1/-1}.sales-box.total strong{font-size:22px}}
+
+.auth-overlay{position:fixed;inset:0;z-index:9999;background:#F5F1E9;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-overlay.hidden{display:none}.auth-card{width:min(100%,430px);background:#FFFCF7;border:1px solid #DDD5C8;border-radius:28px;padding:28px;box-shadow:0 20px 60px rgba(30,40,35,.12)}
+.auth-brand{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}.auth-sub{color:#7D827E;margin-bottom:26px}.auth-card h2{font-size:22px;margin:0 0 16px}.auth-card .large-input{margin-bottom:12px}.auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.auth-message{min-height:22px;margin:12px 0 0;color:#6E756F;font-size:14px;line-height:1.45}.auth-message.error{color:#A34A43}.auth-message.ok{color:#53725D}
+.auth-link{display:block;width:100%;border:0;background:transparent;color:#68756C;font-size:13px;font-weight:800;text-align:center;padding:12px 4px 2px;cursor:pointer}.auth-link:hover{text-decoration:underline}.reset-actions{display:grid;gap:9px;margin-top:8px}.reset-help{font-size:12px;line-height:1.55;color:#7D827E;margin:0 0 14px}.calendar-month-summary{margin:12px 0 4px;background:var(--sage3);border:1px solid #DCE5DE;border-radius:16px;padding:13px 14px}.calendar-month-summary span{display:block;color:var(--muted);font-size:10px;font-weight:800}.calendar-month-summary strong{display:block;font-size:21px;letter-spacing:-.5px;margin-top:4px}.calendar-month-summary small{display:block;color:var(--muted);font-size:10px;margin-top:5px;line-height:1.45}
+.account-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0 4px}.account-row small{display:block;color:#7D827E}.account-row b{display:block;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#6E756F;margin-top:8px}.sync-dot{width:7px;height:7px;border-radius:50%;background:#819687}.sync-pill.syncing .sync-dot{background:#D8A65B}.sync-pill.error .sync-dot{background:#C66A62}
+
+.menu-trigger{width:44px;height:44px;border:1px solid var(--line);border-radius:14px;background:var(--paper);display:grid;place-items:center;font-size:23px;font-weight:900;color:var(--dark);box-shadow:var(--shadow)}
+.menu-backdrop{position:fixed;inset:0;background:rgba(24,30,27,.38);z-index:65;opacity:0;pointer-events:none;transition:opacity .2s ease}.menu-backdrop.show{opacity:1;pointer-events:auto}
+.side-menu{position:fixed;top:0;right:0;bottom:0;width:min(86vw,340px);background:var(--paper);z-index:70;transform:translateX(105%);transition:transform .23s ease;box-shadow:-18px 0 40px rgba(39,52,46,.16);padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column}.side-menu.show{transform:translateX(0)}
+.side-menu-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px 2px 16px;border-bottom:1px solid var(--line)}.side-menu-head strong{display:block;font-size:19px}.side-menu-head span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.menu-list{display:grid;gap:5px;padding:14px 0;overflow-y:auto}.menu-item{width:100%;border:0;background:transparent;border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:12px;text-align:left;font-weight:800;color:var(--ink)}.menu-item .mi{width:28px;font-size:19px;text-align:center}.menu-item.active{background:var(--sage2);color:var(--dark)}.menu-item:hover{background:var(--sage3)}
+.menu-divider{height:1px;background:var(--line);margin:4px 0}.menu-bottom{margin-top:auto;border-top:1px solid var(--line);padding-top:14px}.menu-account{background:var(--sage3);border-radius:14px;padding:12px;margin-bottom:10px}.menu-account small{display:block;color:var(--muted);font-size:10px}.menu-account b{display:block;margin-top:4px;font-size:12px;word-break:break-all}
+.calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px}.calendar-month-title{font-size:20px;font-weight:900;white-space:nowrap}.calendar-toolbar-actions{display:flex;gap:6px}.calendar-toolbar button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 11px;font-weight:800}
+.calendar-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:14px 0 6px}.calendar-weekdays span{text-align:center;color:var(--muted);font-size:11px;font-weight:800;padding:5px 0}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cal-day{min-height:78px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:7px 5px;text-align:left;overflow:hidden}.cal-day.outside{opacity:.38;background:#FAF8F4}.cal-day.today{border-color:var(--sage);box-shadow:inset 0 0 0 1px var(--sage)}.cal-day.selected{background:var(--dark);color:#fff;border-color:var(--dark)}.cal-day-num{font-size:12px;font-weight:900}.cal-day-stat{display:block;margin-top:8px;font-size:9px;line-height:1.35;color:var(--sage);font-weight:800}.cal-day.selected .cal-day-stat{color:#DCE6DD}.cal-day-money{display:block;margin-top:3px;font-size:8px;line-height:1.2;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cal-day.selected .cal-day-money{color:#D6DED8}.cal-day.has-note::after{content:'•';float:right;color:var(--warn);font-size:15px;line-height:10px}.cal-day.selected.has-note::after{color:#F6E5C7}
+.calendar-day-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:12px}.day-sum{background:var(--sage3);border-radius:13px;padding:10px}.day-sum span{display:block;color:var(--muted);font-size:9px}.day-sum b{display:block;margin-top:4px;font-size:13px}.calendar-visit{border:1px solid var(--line);border-radius:15px;padding:12px;background:#fff}.calendar-visit-top{display:flex;justify-content:space-between;gap:10px}.calendar-visit-top b{font-size:14px}.calendar-visit-top strong{font-size:13px}.calendar-visit small{display:block;color:var(--muted);margin-top:5px;font-size:11px}.calendar-visit-actions{display:flex;gap:7px;margin-top:9px}.calendar-visit-actions button{border:0;background:var(--sage2);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:800}.calendar-note-box textarea{min-height:110px}.calendar-add-visit{margin-top:10px}
+@media(max-width:420px){.cal-day{min-height:70px;padding:6px 4px}.cal-day-stat{font-size:8px}.cal-day-money{font-size:7px}.calendar-day-summary{grid-template-columns:1fr 1fr 1fr}}
+
+</style>
+  <title>MY CLIENT BOOK</title>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-brand">MY CLIENT BOOK</div>
+      <div class="auth-sub">크몽 구매자 전용 · 내 계정으로 고객 데이터를 안전하게 저장합니다.</div>
+      <h2>로그인</h2>
+      <input id="authEmail" class="large-input" type="email" autocomplete="email" placeholder="이메일" />
+      <input id="authPassword" class="large-input" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)" />
+      <div class="auth-actions">
+        <button id="authLoginBtn" class="primary-btn">로그인</button>
+        <button id="authSignupBtn" class="secondary-btn">회원가입</button>
+      </div>
+      <button id="authForgotBtn" class="auth-link" type="button">비밀번호를 잊으셨나요?</button>
+      <div id="authMessage" class="auth-message">회원가입 후 구매 시 받은 1회용 이용코드가 필요합니다.</div>
+    </div>
+  </div>
+
+  <div id="resetOverlay" class="auth-overlay hidden">
+    <div class="auth-card">
+      <div class="auth-brand">MY CLIENT BOOK</div>
+      <div class="auth-sub">비밀번호 재설정</div>
+      <div id="resetRequestPane">
+        <h2>재설정 메일 받기</h2>
+        <p class="reset-help">가입한 이메일을 입력하면 비밀번호를 다시 설정할 수 있는 링크를 보내드립니다.</p>
+        <input id="resetEmail" class="large-input" type="email" autocomplete="email" placeholder="가입한 이메일" />
+        <div class="reset-actions">
+          <button id="resetSendBtn" class="primary-btn">재설정 메일 보내기</button>
+          <button id="resetBackBtn" class="secondary-btn">로그인으로 돌아가기</button>
+        </div>
+      </div>
+      <div id="resetChangePane" class="hidden">
+        <h2>새 비밀번호 설정</h2>
+        <p class="reset-help">새 비밀번호를 6자 이상 입력해주세요.</p>
+        <input id="resetNewPassword" class="large-input" type="password" autocomplete="new-password" placeholder="새 비밀번호 (6자 이상)" />
+        <input id="resetNewPassword2" class="large-input" type="password" autocomplete="new-password" placeholder="새 비밀번호 확인" />
+        <div class="reset-actions">
+          <button id="resetSaveBtn" class="primary-btn">새 비밀번호 저장</button>
+        </div>
+      </div>
+      <div id="resetMessage" class="auth-message"></div>
+    </div>
+  </div>
+
+  <div id="accessOverlay" class="auth-overlay hidden">
+    <div class="auth-card">
+      <div class="auth-brand">MY CLIENT BOOK</div>
+      <div class="auth-sub">구매자 이용권 인증</div>
+      <h2>이용코드를 입력해주세요</h2>
+      <p style="color:#6E756F;font-size:14px;line-height:1.6;margin:0 0 16px">크몽에서 구매 후 전달받은 1회용 이용코드를 입력하면 이 계정에 사용 권한이 등록됩니다.</p>
+      <input id="accessCode" class="large-input" type="text" autocomplete="off" autocapitalize="characters" placeholder="예: MCB-XXXX-XXXX-XXXX" />
+      <button id="activateCodeBtn" class="primary-btn" style="width:100%;margin-top:8px">이용코드 등록</button>
+      <button id="accessSignOutBtn" class="ghost-btn" style="width:100%;margin-top:10px">다른 계정으로 로그인</button>
+      <div id="accessMessage" class="auth-message">구매하지 않은 계정은 앱 기능을 사용할 수 없습니다.</div>
+    </div>
+  </div>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand" id="homeBrand" role="button" tabindex="0" aria-label="홈으로 이동">
+        <strong>MY CLIENT BOOK</strong>
+        <span>헤어디자이너 퍼스널 CRM</span>
+      </div>
+      <button class="menu-trigger" id="menuTrigger" aria-label="메뉴 열기">☰</button>
+    </div>
+  </header>
+
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+  <aside class="side-menu" id="sideMenu" aria-hidden="true">
+    <div class="side-menu-head">
+      <div><strong>MY CLIENT BOOK</strong><span>메뉴</span></div>
+      <button class="icon-btn" id="menuClose" aria-label="메뉴 닫기">×</button>
+    </div>
+    <div class="menu-list">
+      <button class="menu-item active" data-view="home"><span class="mi">⌂</span>홈</button>
+      <button class="menu-item" data-view="customers"><span class="mi">○</span>고객관리</button>
+      <button class="menu-item" data-view="visits"><span class="mi">✂</span>방문기록</button>
+      <button class="menu-item" data-view="calendar"><span class="mi">▦</span>캘린더</button>
+      <button class="menu-item" data-view="callbacks"><span class="mi">↻</span>오늘의 콜백</button>
+      <button class="menu-item" data-view="search"><span class="mi">⌕</span>고객검색</button>
+      <button class="menu-item" data-view="sales-detail"><span class="mi">▤</span>월간 대시보드</button>
+      <div class="menu-divider"></div>
+      <button class="menu-item" data-view="settings"><span class="mi">⚙</span>설정 · 데이터</button>
+      <button class="menu-item" id="globalAddCustomer"><span class="mi">＋</span>고객 바로 등록</button>
+    </div>
+    <div class="menu-bottom">
+      <div class="menu-account"><small>로그인 계정</small><b id="menuAccountEmail">-</b></div>
+      <button class="ghost-btn full" id="menuSignOutBtn">로그아웃</button>
+    </div>
+  </aside>
+
+  <main class="app-shell">
+    <!-- HOME -->
+    <section id="home" class="view active">
+      <div class="hero-card">
+        <div>
+          <span class="eyebrow">오늘의 고객관리</span>
+          <h1>필요한 것만 빠르게.</h1>
+          <p>고객 · 방문 · 콜백 · 매출을 모바일에서 한 손으로 관리하세요.</p>
+        </div>
+      </div>
+
+      <div class="metric-grid" id="homeMetrics"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>최근 활동</h2><p>마지막 방문기록을 빠르게 확인하세요.</p></div>
+          <button class="text-btn" data-go="visits">방문기록 보기</button>
+        </div>
+        <div id="homeRecentPreview" class="stack"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>이번 달 매출</h2><p id="homeMonthLabel">-</p></div>
+          <button class="text-btn" data-go="sales-detail">매출 상세</button>
+        </div>
+        <div class="sales-summary" id="homeSalesSummary"></div>
+        <div class="goal-block" id="homeGoal"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>다가오는 콜백</h2><p>최근 방문 기준 미연락 고객</p></div>
+          <button class="text-btn" data-go="callbacks">전체보기</button>
+        </div>
+        <div id="homeCallbackPreview" class="stack"></div>
+      </div>
+
+    </section>
+
+    <!-- CUSTOMERS -->
+    <section id="customers" class="view">
+      <div class="screen-title">
+        <div><h1>고객</h1><p>검색하고 바로 확인하세요.</p></div>
+        <button class="primary-btn compact" id="addCustomerTop">+ 등록</button>
+      </div>
+
+      <div class="panel sticky-search">
+        <div class="search-inline">
+          <input id="customerListQuery" placeholder="이름 또는 뒤4자리 검색" autocomplete="off" />
+          <button class="icon-btn" id="clearCustomerListQuery" aria-label="검색 지우기">×</button>
+        </div>
+      </div>
+
+      <div id="customerCards" class="stack"></div>
+    </section>
+
+    <!-- VISITS -->
+    <section id="visits" class="view">
+      <div class="screen-title">
+        <div><h1>방문 기록</h1><p>시술·결제·재방문까지 한 번에.</p></div>
+      </div>
+
+      <div class="panel visit-form-card">
+        <form id="visitFormEl" novalidate>
+          <input type="hidden" id="vEditId" />
+          <input type="hidden" id="vCustomerId" />
+
+          <div class="form-section">
+            <div class="form-section-title"><span>1</span><b>고객 찾기</b></div>
+            <label class="field-label" for="customerPickerInput">이름 또는 연락처 뒤4자리</label>
+            <div class="picker-wrap">
+              <input id="customerPickerInput" class="large-input" placeholder="예: 홍길동 또는 4821" autocomplete="off" />
+              <button type="button" class="icon-btn picker-clear" id="clearCustomerPicker">×</button>
+              <div id="customerPickerResults" class="picker-results"></div>
+            </div>
+            <div id="selectedCustomerCard" class="selected-customer hidden"></div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title"><span>2</span><b>방문 정보</b></div>
+            <label class="field-label" for="vDate">방문일</label>
+            <input type="date" id="vDate" class="large-input date-input" required />
+
+            <label class="field-label" for="vType">구분</label>
+            <div class="segmented" id="typeSegment">
+              <button type="button" data-value="신규" class="active">신규</button>
+              <button type="button" data-value="재방문">재방문</button>
+            </div>
+            <input type="hidden" id="vType" value="신규" />
+
+            <label class="field-label" for="vService">시술</label>
+            <input id="vService" class="large-input" placeholder="예: 컷+다운펌" />
+          </div>
+
+          <div class="form-section money-section">
+            <div class="form-section-title"><span>3</span><b>결제</b></div>
+            <label class="field-label" for="vBeauty">미용매출</label>
+            <input type="number" id="vBeauty" min="0" inputmode="numeric" class="large-input money-input" value="0" />
+
+            <label class="field-label" for="vRetail">점판매출</label>
+            <input type="number" id="vRetail" min="0" inputmode="numeric" class="large-input money-input" value="0" />
+
+            <div class="total-pay-box">
+              <span>총 결제금액 자동계산</span>
+              <strong id="totalPayPreview">0원</strong>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title"><span>4</span><b>재방문 · 메모</b></div>
+            <label class="field-label" for="vCycle">재방문 주기(일)</label>
+            <input type="number" id="vCycle" min="0" inputmode="numeric" class="large-input" value="35" />
+
+            <label class="field-label" for="vStatus">콜백 상태</label>
+            <select id="vStatus" class="large-input">
+              <option>미연락</option><option>연락완료</option><option>예약확정</option><option>보류</option>
+            </select>
+
+            <label class="field-label" for="vNext">다음 예약일</label>
+            <input type="date" id="vNext" class="large-input date-input" />
+
+            <label class="field-label" for="vMemo">방문 메모</label>
+            <textarea id="vMemo" class="large-input" placeholder="상담/시술 내용을 기록하세요."></textarea>
+          </div>
+
+          <div class="save-bar">
+            <button type="button" class="ghost-btn" id="cancelVisitEdit" hidden>수정 취소</button>
+            <button type="submit" class="primary-btn full" id="visitSubmitBtn">방문 저장</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h2>최근 방문기록</h2><p>최신순</p></div></div>
+        <div id="recentVisitCards" class="stack"></div>
+      </div>
+    </section>
+
+    <!-- SALES DETAIL -->
+    <section id="sales-detail" class="view">
+      <div class="screen-title">
+        <div><h1>월간 대시보드</h1><p>매출과 고객 흐름을 월별로 확인하세요.</p></div>
+        <button class="text-btn" data-go="home">← 홈</button>
+      </div>
+
+      <div class="panel">
+        <label class="field-label" for="dashboardMonth">조회 월</label>
+        <input id="dashboardMonth" type="month" class="large-input" />
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h2>매출 요약</h2><p id="dashboardMonthLabel">-</p></div></div>
+        <div class="sales-summary dashboard-sales" id="dashboardSalesSummary"></div>
+      </div>
+
+      <div class="dashboard-metric-grid" id="dashboardMetrics"></div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h2>목표 달성률</h2><p>미용 · 점판 · 총매출</p></div></div>
+        <div id="dashboardGoals" class="dashboard-goals"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h2>이달 방문 흐름</h2><p>최근 방문부터 최대 10건</p></div></div>
+        <div id="dashboardVisitPreview" class="stack"></div>
+      </div>
+    </section>
+
+    <!-- CALLBACKS -->
+    <section id="callbacks" class="view">
+      <div class="screen-title"><div><h1>콜백</h1><p>연락이 필요한 고객부터 보여줍니다.</p></div></div>
+      <div class="filter-chips" id="callbackFilters">
+        <button class="active" data-filter="all">전체</button>
+        <button data-filter="overdue">지남</button>
+        <button data-filter="today">오늘</button>
+        <button data-filter="soon">7일 이내</button>
+      </div>
+      <div id="callbackCards" class="stack"></div>
+    </section>
+
+    <!-- SEARCH -->
+    <section id="search" class="view">
+      <div class="screen-title"><div><h1>고객 검색</h1><p>이름과 뒤4자리로 빠르게 찾습니다.</p></div></div>
+      <div class="panel">
+        <div class="search-form">
+          <input id="sName" class="large-input" placeholder="고객명" autocomplete="off" />
+          <input id="sPhone" class="large-input" inputmode="numeric" maxlength="4" placeholder="뒤4자리" autocomplete="off" />
+          <button class="primary-btn full" id="searchBtn">검색</button>
+        </div>
+      </div>
+      <div id="searchResult" class="stack"></div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section id="calendar" class="view">
+      <div class="screen-title"><div><h1>캘린더</h1><p>날짜별 고객 · 매출 · 메모를 한눈에.</p></div></div>
+      <div class="panel">
+        <div class="calendar-toolbar">
+          <div class="calendar-month-title" id="calendarMonthTitle">-</div>
+          <div class="calendar-toolbar-actions">
+            <button id="calendarPrev" aria-label="이전 달">‹</button>
+            <button id="calendarTodayBtn">오늘</button>
+            <button id="calendarNext" aria-label="다음 달">›</button>
+          </div>
+        </div>
+        <div class="calendar-month-summary" id="calendarMonthSummary"></div>
+        <div class="calendar-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h2 id="calendarSelectedTitle">오늘</h2><p>방문 고객과 당일 매출</p></div></div>
+        <div class="calendar-day-summary" id="calendarDaySummary"></div>
+        <div id="calendarVisitList" class="stack"></div>
+        <button class="secondary-btn full calendar-add-visit" id="calendarAddVisit">+ 이 날짜에 방문 기록 추가</button>
+      </div>
+
+      <div class="panel calendar-note-box">
+        <div class="panel-head"><div><h2>일일 메모</h2><p>예약, 일정, 해야 할 일 등 자유롭게 기록하세요.</p></div></div>
+        <textarea id="calendarMemo" class="large-input" placeholder="예: 오후 3시 촬영 / 재료 주문 / 예약 특이사항"></textarea>
+        <button class="primary-btn full" id="saveCalendarMemo" style="margin-top:10px">메모 저장</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="settings" class="view">
+      <div class="screen-title"><div><h1>설정 · 데이터</h1><p>목표매출, 백업, 계정을 관리합니다.</p></div></div>
+
+      <details class="panel data-panel" open>
+        <summary>홈 화면에 설치</summary>
+        <div class="install-row">
+          <div class="install-copy"><b>MY CLIENT BOOK 앱처럼 사용하기</b><p>한 번 설치하면 Safari 주소창 없이 홈 화면 아이콘으로 바로 실행할 수 있습니다.</p></div>
+          <button class="secondary-btn compact" id="installAppBtn" type="button">설치 방법</button>
+        </div>
+        <div class="install-status" id="installStatus">설치 상태 확인 중</div>
+      </details>
+
+      <details class="panel update-panel" open>
+        <summary>업데이트</summary>
+        <div class="update-status-row">
+          <div class="update-version"><small>현재 버전</small><b id="currentAppVersion">v2.11</b></div>
+          <span class="update-badge" id="updateBadge">확인 중</span>
+        </div>
+        <div class="button-grid two-col">
+          <button class="secondary-btn" id="updateCheckBtn">업데이트 확인</button>
+          <button class="primary-btn" id="updateApplyBtn" hidden>업데이트하기</button>
+        </div>
+        <div id="releaseNotes" class="release-notes"></div>
+      </details>
+
+      <details class="panel data-panel" open>
+        <summary>데이터 관리 · 목표 설정</summary>
+        <div class="settings-grid">
+          <label>미용 목표매출<input id="goalBeauty" type="number" min="0"></label>
+          <label>점판 목표매출<input id="goalRetail" type="number" min="0"></label>
+        </div>
+        <button class="secondary-btn full" id="saveGoals">목표 저장</button>
+        <div class="button-grid two-col">
+          <button class="secondary-btn" id="backupBtn">백업</button>
+          <button class="secondary-btn" id="restoreBtn">복원</button>
+          <button class="secondary-btn" id="exportCustomersCsv">고객 CSV</button>
+          <button class="secondary-btn" id="exportVisitsCsv">방문 CSV</button>
+        </div>
+        <div class="account-row"><div><small>로그인 계정</small><b id="accountEmail">-</b><div id="syncStatus" class="sync-pill"><span class="sync-dot"></span><span>클라우드 연결 준비 중</span></div></div><button class="ghost-btn" id="signOutBtn">로그아웃</button></div>
+        <button class="ghost-btn full" id="sampleBtn">샘플 데이터 불러오기</button>
+      </details>
+    </section>
+  </main>
+
+  <!-- CUSTOMER MODAL -->
+  <div class="modal" id="customerModal" aria-hidden="true">
+    <div class="modal-sheet">
+      <div class="modal-grab"></div>
+      <div class="modal-head"><h2 id="customerModalTitle">고객 등록</h2><button class="icon-btn" id="closeCustomerModal">×</button></div>
+      <form id="customerFormEl" novalidate>
+        <input type="hidden" id="cEditId" />
+        <label class="field-label" for="cName">고객명</label>
+        <input id="cName" class="large-input" placeholder="예: 홍길동" required />
+
+        <label class="field-label" for="cPhone">연락처 뒤4자리</label>
+        <input id="cPhone" class="large-input" inputmode="numeric" maxlength="4" placeholder="예: 4821" required />
+
+        <label class="field-label" for="cStyle">선호 스타일</label>
+        <input id="cStyle" class="large-input" placeholder="예: 컷+다운펌" />
+
+        <label class="field-label" for="cCycle">기본 재방문 주기(일)</label>
+        <input id="cCycle" type="number" min="0" inputmode="numeric" class="large-input" value="35" />
+
+        <label class="field-label" for="cMemo">고객 메모</label>
+        <textarea id="cMemo" class="large-input" placeholder="예: 옆머리가 잘 뜨는 편"></textarea>
+
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" id="deleteCustomerBtn" hidden>고객 삭제</button>
+          <button type="submit" class="primary-btn">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <input type="file" accept="application/json" id="restoreInput" hidden />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>const SUPABASE_URL='https://tkulmibucpucbvqbqijq.supabase.co';
+const SUPABASE_KEY='sb_publishable_GLHP5M672sR_h4N13FIndw_0mgxdYP0';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const APP_REDIRECT_URL=window.location.origin+'/';
+const APP_VERSION='2.12';
+const LOCAL_RELEASE={version:'2.12',date:'2026-09-04',features:['홈 화면에 MY CLIENT BOOK을 설치해 주소창 없이 앱처럼 실행할 수 있습니다.','동명이인·동일 뒤4자리 고객 검색 시 후보 목록에서 정확한 고객을 선택할 수 있습니다.','설정에 업데이트 센터를 추가해 새 버전과 변경 내용을 확인하고 직접 업데이트할 수 있습니다.','왼쪽 위 MY CLIENT BOOK 로고를 누르면 어느 화면에서든 홈으로 이동합니다.'],fixes:['이름 또는 번호만 검색했을 때 첫 번째 고객만 표시되던 문제를 수정했습니다.','데이터 복원용 파일 선택 입력창이 설정 외 화면에도 보이던 문제를 수정했습니다.']};
+let latestRelease=LOCAL_RELEASE;
+let authEntering=false;
+let recoveryMode=false;
+function clearAuthUrl(){
+  if(window.location.hash||window.location.search.includes('code=')||window.location.search.includes('error=')||window.location.search.includes('recovery=1')){
+    history.replaceState({},document.title,window.location.pathname);
+  }
+}
+function authErrorFromUrl(){
+  const hp=new URLSearchParams((window.location.hash||'').replace(/^#/,''));
+  const sp=new URLSearchParams(window.location.search);
+  return hp.get('error_description')||sp.get('error_description')||hp.get('error')||sp.get('error')||'';
+}
+const LEGACY_KEY='myClientBook_app_v1'; // 로그인 도입 전 기존 로컬 데이터
+const OLD_KEY='myClientBook_v1';
+let legacyState=loadLegacyState();
+let state=emptyState();
+let callbackFilter='all';
+let customerPickerTimer=null;
+
+function emptyState(){return{customers:[],visits:[],dailyNotes:[],goals:{beauty:5000000,retail:500000},version:2.12};}
+function normalizeLoadedState(x){
+  if(!x||!Array.isArray(x.customers)||!Array.isArray(x.visits))return null;
+  x.dailyNotes=Array.isArray(x.dailyNotes)?x.dailyNotes:[];x.goals=x.goals||{beauty:5000000,retail:500000};x.version=2.12;return x;
+}
+function loadLegacyState(){
+  try{
+    const cur=normalizeLoadedState(JSON.parse(localStorage.getItem(LEGACY_KEY)));
+    if(cur)return cur;
+    const old=normalizeLoadedState(JSON.parse(localStorage.getItem(OLD_KEY)));
+    if(old)return old;
+  }catch(e){}
+  return emptyState();
+}
+function accountKey(userId){return `myClientBook_cloud_${userId}`;}
+function snapshotKey(userId){return `myClientBook_cloud_snapshot_${userId}`;}
+function pendingKey(userId){return `myClientBook_pending_sync_${userId}`;}
+function entitlementKey(userId){return `myClientBook_entitlement_${userId}`;}
+function saveEntitlementCache(ent){if(currentUser&&ent)localStorage.setItem(entitlementKey(currentUser.id),JSON.stringify({...ent,checked_at:Date.now()}));}
+function loadEntitlementCache(userId){try{return JSON.parse(localStorage.getItem(entitlementKey(userId))||'null');}catch(e){return null;}}
+function entitlementAllowed(ent){if(!ent||ent.status!=='active')return false;if(ent.expires_at&&new Date(ent.expires_at)<=new Date())return false;return true;}
+function loadAccountLocal(userId){
+  try{return normalizeLoadedState(JSON.parse(localStorage.getItem(accountKey(userId))));}catch(e){return null;}
+}
+function loadAccountSnapshot(userId){
+  try{return normalizeLoadedState(JSON.parse(localStorage.getItem(snapshotKey(userId))));}catch(e){return null;}
+}
+let currentUser=null;
+let cloudSnapshot=null;
+let cloudReady=false;
+let syncQueue=Promise.resolve();
+let syncTimer=null;
+function setSyncStatus(text,cls=''){
+  const el=document.getElementById('syncStatus');if(!el)return;
+  el.className='sync-pill '+cls;el.querySelector('span:last-child').textContent=text;
+}
+function saveLocal(){if(!currentUser)return;state.version=2.11;localStorage.setItem(accountKey(currentUser.id),JSON.stringify(state));}
+function saveSnapshot(){if(currentUser&&cloudSnapshot)localStorage.setItem(snapshotKey(currentUser.id),JSON.stringify(cloudSnapshot));}
+function setPending(v=true){if(!currentUser)return;if(v)localStorage.setItem(pendingKey(currentUser.id),'1');else localStorage.removeItem(pendingKey(currentUser.id));}
+function hasPending(){return Boolean(currentUser&&localStorage.getItem(pendingKey(currentUser.id))==='1');}
+function saveState(){saveLocal();setPending(true);renderAll();scheduleCloudSync();}
+function uid(){return (globalThis.crypto?.randomUUID?.()||('00000000-0000-4000-8000-'+Math.random().toString(16).slice(2).padEnd(12,'0').slice(0,12)));}
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function money(n){return (Number(n)||0).toLocaleString('ko-KR')+'원';}
+function todayISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function fmtDate(s){if(!s)return'-';const d=new Date(s+'T00:00:00');if(isNaN(d))return s;return`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;}
+function addDays(dateStr,days){if(!dateStr)return'';const d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+Number(days||0));return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function daysBetween(a,b){const A=new Date(a+'T00:00:00'),B=new Date(b+'T00:00:00');return Math.round((B-A)/86400000);}
+function customerOf(v){return state.customers.find(c=>c.id===v.customerId);}
+function visitsFor(cid){return state.visits.filter(v=>v.customerId===cid).sort((a,b)=>a.date.localeCompare(b.date));}
+function lastVisit(cid){const a=visitsFor(cid);return a[a.length-1];}
+function finalPay(v){
+  if(v.totalPaid!==undefined&&v.totalPaid!==null&&v.totalPaid!=='')return Number(v.totalPaid||0);
+  return Number(v.serviceAmount||0)-Number(v.discount||0)+Number(v.retail||0);
+}
+function beautyPay(v){
+  if(v.totalPaid!==undefined&&v.totalPaid!==null&&v.totalPaid!=='')return Math.max(0,Number(v.totalPaid||0)-Number(v.retail||0));
+  return Math.max(0,Number(v.serviceAmount||0)-Number(v.discount||0));
+}
+function callbackDate(v){return addDays(v.date,v.cycle||0);}
+function monthKey(s){return s?.slice(0,7)||'';}
+function monthVisits(m){return state.visits.filter(v=>monthKey(v.date)===m);}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
+function statusClass(s){return{미연락:'red',연락완료:'gray',예약확정:'green',보류:'beige'}[s]||'gray';}
+function dday(v){
+  const cd=callbackDate(v);if(!cd)return{text:'-',cls:'gray',rank:9,diff:999};
+  const diff=daysBetween(todayISO(),cd);
+  if(diff<0)return{text:`⚠ ${Math.abs(diff)}일 지남`,cls:'red',rank:1,diff};
+  if(diff===0)return{text:'⚠ 오늘 연락',cls:'orange',rank:1,diff};
+  if(diff<=7)return{text:`● D-${diff} · 곧 연락`,cls:'yellow',rank:2,diff};
+  return{text:`D-${diff}`,cls:'gray',rank:9,diff};
+}
+function callbackItems(){
+  const items=[];
+  state.customers.forEach(c=>{
+    const v=lastVisit(c.id);if(!v||v.status!=='미연락')return;
+    const d=dday(v);if(d.rank<=2)items.push({c,v,d});
+  });
+  return items.sort((a,b)=>a.d.diff-b.d.diff||callbackDate(a.v).localeCompare(callbackDate(b.v)));
+}
+
+
+function clone(x){return JSON.parse(JSON.stringify(x));}
+function isUuid(x){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(x||''));}
+function normalizeStateIds(){
+  const map=new Map();
+  state.customers.forEach(c=>{const old=c.id;if(!isUuid(c.id))c.id=uid();map.set(old,c.id);});
+  state.visits.forEach(v=>{if(map.has(v.customerId))v.customerId=map.get(v.customerId);if(!isUuid(v.id))v.id=uid();});
+  state.dailyNotes.forEach(n=>{if(!isUuid(n.id))n.id=uid();});
+}
+function customerRow(c){return{id:c.id,user_id:currentUser.id,name:c.name,phone_last4:c.phone,preferred_style:c.style||null,memo:c.memo||null,default_cycle:Number(c.cycle||35)};}
+function visitRow(v){return{id:v.id,user_id:currentUser.id,customer_id:v.customerId,visit_date:v.date,visit_type:v.type||'재방문',service:v.service||null,beauty_sales:beautyPay(v),retail_sales:Number(v.retail||0),callback_cycle:Number(v.cycle||35),callback_status:v.status||'미연락',next_booking_date:v.next||null,memo:v.memo||null};}
+function dailyNoteRow(n){return{id:n.id,user_id:currentUser.id,note_date:n.date,memo:n.memo||null};}
+function customerFromRow(r){return{id:r.id,name:r.name,phone:r.phone_last4,style:r.preferred_style||'',memo:r.memo||'',cycle:Number(r.default_cycle||35),created:(r.created_at||'').slice(0,10)};}
+function visitFromRow(r){const beauty=Number(r.beauty_sales||0),retail=Number(r.retail_sales||0);return{id:r.id,customerId:r.customer_id,date:r.visit_date,type:r.visit_type,service:r.service||'',serviceAmount:beauty,discount:0,retail,totalPaid:beauty+retail,cycle:Number(r.callback_cycle||35),status:r.callback_status||'미연락',next:r.next_booking_date||'',memo:r.memo||''};}
+function dailyNoteFromRow(r){return{id:r.id,date:r.note_date,memo:r.memo||''};}
+function changedMap(items){return new Map((items||[]).map(x=>[x.id,JSON.stringify(x)]));}
+function scheduleCloudSync(){
+  if(!currentUser||!cloudReady)return;
+  if(!navigator.onLine){setSyncStatus('오프라인 · 기기에 저장됨','syncing');return;}
+  clearTimeout(syncTimer);syncTimer=setTimeout(()=>{syncQueue=syncQueue.then(syncDiff).catch(e=>{
+    console.error(e);setPending(true);
+    if(!navigator.onLine)setSyncStatus('오프라인 · 기기에 저장됨','syncing');
+    else setSyncStatus('동기화 대기','error');
+  });},250);
+}
+async function syncDiff(){
+  if(!currentUser||!cloudReady)return;
+  if(!navigator.onLine){setSyncStatus('오프라인 · 기기에 저장됨','syncing');return;}
+  normalizeStateIds();saveLocal();setSyncStatus('저장 중…','syncing');
+  const next=clone(state),prev=cloudSnapshot||emptyState();
+  const prevC=changedMap(prev.customers),nextC=changedMap(next.customers),prevV=changedMap(prev.visits),nextV=changedMap(next.visits),prevN=changedMap(prev.dailyNotes),nextN=changedMap(next.dailyNotes);
+  const delV=[...prevV.keys()].filter(id=>!nextV.has(id));
+  const delC=[...prevC.keys()].filter(id=>!nextC.has(id));
+  const delN=[...prevN.keys()].filter(id=>!nextN.has(id));
+  const upC=next.customers.filter(c=>prevC.get(c.id)!==JSON.stringify(c));
+  const upV=next.visits.filter(v=>prevV.get(v.id)!==JSON.stringify(v));
+  const upN=next.dailyNotes.filter(n=>prevN.get(n.id)!==JSON.stringify(n));
+  let error=null;
+  if(delV.length){({error}=await sb.from('visits').delete().in('id',delV));if(error)throw error;}
+  if(delN.length){({error}=await sb.from('daily_notes').delete().in('id',delN));if(error)throw error;}
+  if(delC.length){({error}=await sb.from('customers').delete().in('id',delC));if(error)throw error;}
+  if(upC.length){({error}=await sb.from('customers').upsert(upC.map(customerRow)));if(error)throw error;}
+  if(upV.length){({error}=await sb.from('visits').upsert(upV.map(visitRow)));if(error)throw error;}
+  if(upN.length){({error}=await sb.from('daily_notes').upsert(upN.map(dailyNoteRow),{onConflict:'user_id,note_date'}));if(error)throw error;}
+  ({error}=await sb.from('user_settings').upsert({user_id:currentUser.id,beauty_goal:Number(next.goals.beauty||0),retail_goal:Number(next.goals.retail||0),default_cycle:35}));if(error)throw error;
+  cloudSnapshot=clone(next);saveSnapshot();setPending(false);setSyncStatus('자동 저장됨');
+}
+async function retryCloudSync(){
+  if(!currentUser||!cloudReady)return;
+  if(!navigator.onLine){setSyncStatus('오프라인 · 기기에 저장됨','syncing');return;}
+  if(hasPending()||JSON.stringify(state)!==JSON.stringify(cloudSnapshot||emptyState()))scheduleCloudSync();
+  else setSyncStatus('자동 저장됨');
+}
+async function loadCloudState(){
+  setSyncStatus('불러오는 중…','syncing');
+  const [{data:customers,error:ce},{data:visits,error:ve},{data:dailyNotes,error:ne},{data:settings,error:se}]=await Promise.all([
+    sb.from('customers').select('*').order('name'),
+    sb.from('visits').select('*').order('visit_date'),
+    sb.from('daily_notes').select('*').order('note_date'),
+    sb.from('user_settings').select('*').maybeSingle()
+  ]);
+  if(ce||ve||ne||se)throw (ce||ve||ne||se);
+  const hasRemote=Boolean(customers?.length||visits?.length||dailyNotes?.length);
+  const migrated=localStorage.getItem(`myClientBook_migrated_${currentUser.id}`)==='1';
+  const hasLocal=Boolean(state.customers.length||state.visits.length||state.dailyNotes.length) && !migrated;
+  if(!hasRemote&&hasLocal){
+    if(confirm('이 기기에 저장된 기존 데이터를 이 계정으로 가져올까요?')){
+      normalizeStateIds();cloudSnapshot=emptyState();cloudReady=true;await syncDiff();
+    }else{
+      state=emptyState();if(settings)state.goals={beauty:Number(settings.beauty_goal||0),retail:Number(settings.retail_goal||0)};saveLocal();cloudSnapshot=clone(state);saveSnapshot();cloudReady=true;
+    }
+  }else{
+    state={customers:(customers||[]).map(customerFromRow),visits:(visits||[]).map(visitFromRow),dailyNotes:(dailyNotes||[]).map(dailyNoteFromRow),goals:{beauty:Number(settings?.beauty_goal??5000000),retail:Number(settings?.retail_goal??500000)},version:2.12};
+    saveLocal();cloudSnapshot=clone(state);saveSnapshot();cloudReady=true;
+  }
+  renderAll();setSyncStatus('자동 저장됨');
+}
+async function fetchEntitlement(){
+  const {data,error}=await sb.from('app_entitlements').select('status,expires_at').maybeSingle();
+  if(error)throw error;
+  if(data)saveEntitlementCache(data);
+  return data;
+}
+function showAccess(message='',cls=''){
+  const ov=document.getElementById('accessOverlay'),msg=document.getElementById('accessMessage');
+  authOverlay.classList.add('hidden');ov.classList.remove('hidden');
+  msg.textContent=message||'크몽 구매 후 받은 1회용 이용코드를 입력해주세요.';msg.className='auth-message '+cls;
+}
+function hideAccess(){document.getElementById('accessOverlay')?.classList.add('hidden');}
+async function verifyEntitlement(){
+  try{
+    const ent=await fetchEntitlement();
+    if(entitlementAllowed(ent))return true;
+    if(ent?.status==='expired'||(ent?.expires_at&&new Date(ent.expires_at)<=new Date()))showAccess('사용 기간이 만료되었습니다.','error');
+    else if(ent?.status==='revoked')showAccess('현재 사용이 중지된 계정입니다. 문의해주세요.','error');
+    else showAccess();
+    return false;
+  }catch(e){
+    const cached=loadEntitlementCache(currentUser?.id);
+    if(!navigator.onLine&&entitlementAllowed(cached))return true;
+    throw e;
+  }
+}
+function showAuth(message='',cls=''){
+  document.getElementById('resetOverlay')?.classList.add('hidden');
+  authOverlay.classList.remove('hidden');authMessage.textContent=message||'로그인하면 여러 기기에서 같은 고객 데이터를 사용할 수 있습니다.';authMessage.className='auth-message '+cls;
+}
+function hideAuth(){authOverlay.classList.add('hidden');}
+async function enterSession(user){
+  if(!user||authEntering)return;
+  if(currentUser?.id===user.id&&cloudReady){hideAuth();hideAccess();clearAuthUrl();return;}
+  authEntering=true;currentUser=user;accountEmail.textContent=user.email||'계정';menuAccountEmail.textContent=user.email||'계정';
+  const cached=loadAccountLocal(user.id);
+  state=cached||clone(legacyState||emptyState());
+  try{
+    const allowed=await verifyEntitlement();
+    if(!allowed){cloudReady=false;state=emptyState();renderAll();clearAuthUrl();return;}
+    hideAccess();
+    await loadCloudState();
+    localStorage.setItem(`myClientBook_migrated_${user.id}`,'1');
+    hideAuth();clearAuthUrl();setView('home');
+  }catch(e){
+    console.error(e);
+    if(cached&&navigator.onLine===false&&entitlementAllowed(loadEntitlementCache(user.id))){
+      state=cached;cloudSnapshot=loadAccountSnapshot(user.id)||emptyState();cloudReady=true;
+      setPending(JSON.stringify(state)!==JSON.stringify(cloudSnapshot));
+      hideAuth();hideAccess();clearAuthUrl();setView('home');
+      setSyncStatus('오프라인 · 기기에 저장됨','syncing');
+    }else{
+      showAuth(e.message||'계정 정보를 확인하지 못했습니다.','error');currentUser=null;cloudReady=false;state=emptyState();renderAll();
+    }
+  }finally{authEntering=false;}
+}
+function friendlyAuthError(error,context='login'){
+  const raw=String(error?.message||'').trim();
+  const msg=raw.toLowerCase();
+  if(context==='login'&&(msg.includes('invalid login credentials')||msg.includes('invalid credentials'))){
+    return '이메일 또는 비밀번호가 맞지 않습니다. 가입한 이메일이라면 비밀번호 재설정을 이용해주세요.';
+  }
+  if(context==='signup'&&(msg.includes('already registered')||msg.includes('user already exists')||msg.includes('invalid login credentials')||msg.includes('invalid credentials'))){
+    return '이미 가입된 이메일일 수 있습니다. 기존 계정으로 로그인하거나 비밀번호 재설정을 이용해주세요.';
+  }
+  if(msg.includes('email not confirmed'))return '이메일 인증이 아직 완료되지 않았습니다. 받은 메일에서 인증을 완료해주세요.';
+  if(msg.includes('password'))return raw||'비밀번호를 확인해주세요.';
+  return raw||'요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.';
+}
+authLoginBtn.addEventListener('click',async()=>{
+  const email=authEmail.value.trim(),password=authPassword.value;if(!email||password.length<6)return showAuth('이메일과 6자 이상 비밀번호를 입력하세요.','error');
+  authLoginBtn.disabled=true;authMessage.textContent='로그인 중…';
+  const {data,error}=await sb.auth.signInWithPassword({email,password});authLoginBtn.disabled=false;
+  if(error)return showAuth(friendlyAuthError(error,'login'),'error');await enterSession(data.user);
+});
+authSignupBtn.addEventListener('click',async()=>{
+  const email=authEmail.value.trim(),password=authPassword.value;if(!email||password.length<6)return showAuth('이메일과 6자 이상 비밀번호를 입력하세요.','error');
+  authSignupBtn.disabled=true;authMessage.textContent='계정 생성 중…';
+  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:APP_REDIRECT_URL}});authSignupBtn.disabled=false;
+  if(error)return showAuth(friendlyAuthError(error,'signup'),'error');
+  const identities=data?.user?.identities;
+  if(data?.user&&Array.isArray(identities)&&identities.length===0){
+    return showAuth('이미 가입된 이메일입니다. 기존 계정으로 로그인하거나 비밀번호 재설정을 이용해주세요.','error');
+  }
+  if(data.session)await enterSession(data.user);else showAuth('회원가입 요청을 확인했습니다. 신규 계정이면 인증 메일을 확인해주세요. 이미 가입한 이메일이라면 새 계정은 생성되지 않으니 로그인 또는 비밀번호 재설정을 이용해주세요.','ok');
+});
+function showResetRequest(){
+  recoveryMode=false;authOverlay.classList.add('hidden');hideAccess();
+  resetOverlay.classList.remove('hidden');resetRequestPane.classList.remove('hidden');resetChangePane.classList.add('hidden');
+  resetEmail.value=authEmail.value.trim();resetMessage.textContent='';resetMessage.className='auth-message';
+}
+function showResetChange(){
+  recoveryMode=true;authOverlay.classList.add('hidden');hideAccess();
+  resetOverlay.classList.remove('hidden');resetRequestPane.classList.add('hidden');resetChangePane.classList.remove('hidden');
+  resetNewPassword.value='';resetNewPassword2.value='';resetMessage.textContent='재설정 링크가 확인되었습니다. 새 비밀번호를 입력해주세요.';resetMessage.className='auth-message ok';
+}
+authForgotBtn.addEventListener('click',showResetRequest);
+resetBackBtn.addEventListener('click',()=>{recoveryMode=false;resetOverlay.classList.add('hidden');showAuth();});
+resetSendBtn.addEventListener('click',async()=>{
+  const email=resetEmail.value.trim();if(!email)return void(resetMessage.textContent='이메일을 입력해주세요.',resetMessage.className='auth-message error');
+  resetSendBtn.disabled=true;resetMessage.textContent='재설정 메일을 보내는 중…';resetMessage.className='auth-message';
+  const redirectTo=window.location.origin+window.location.pathname+'?recovery=1';
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});resetSendBtn.disabled=false;
+  if(error){resetMessage.textContent=error.message||'재설정 메일 발송에 실패했습니다.';resetMessage.className='auth-message error';return;}
+  resetMessage.textContent='입력한 이메일의 계정이 있다면 비밀번호 재설정 메일을 보냈습니다. 메일의 링크를 눌러주세요.';resetMessage.className='auth-message ok';
+});
+resetSaveBtn.addEventListener('click',async()=>{
+  const p1=resetNewPassword.value,p2=resetNewPassword2.value;if(p1.length<6){resetMessage.textContent='새 비밀번호는 6자 이상 입력해주세요.';resetMessage.className='auth-message error';return;}
+  if(p1!==p2){resetMessage.textContent='새 비밀번호가 서로 일치하지 않습니다.';resetMessage.className='auth-message error';return;}
+  resetSaveBtn.disabled=true;resetMessage.textContent='비밀번호 변경 중…';resetMessage.className='auth-message';
+  const {error}=await sb.auth.updateUser({password:p1});resetSaveBtn.disabled=false;
+  if(error){resetMessage.textContent=error.message||'비밀번호 변경에 실패했습니다.';resetMessage.className='auth-message error';return;}
+  recoveryMode=false;clearAuthUrl();await sb.auth.signOut();resetOverlay.classList.add('hidden');showAuth('비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.','ok');
+});
+signOutBtn.addEventListener('click',async()=>{await sb.auth.signOut();currentUser=null;cloudReady=false;cloudSnapshot=null;state=emptyState();accountEmail.textContent='-';menuAccountEmail.textContent='-';renderAll();hideAccess();showAuth('로그아웃되었습니다.');});
+document.getElementById('activateCodeBtn').addEventListener('click',async()=>{
+  const btn=document.getElementById('activateCodeBtn'),input=document.getElementById('accessCode'),msg=document.getElementById('accessMessage');
+  const code=input.value.trim();if(!code){msg.textContent='이용코드를 입력해주세요.';msg.className='auth-message error';return;}
+  btn.disabled=true;msg.textContent='이용권 확인 중…';msg.className='auth-message';
+  const {data,error}=await sb.rpc('redeem_activation_code',{p_code:code});btn.disabled=false;
+  if(error){msg.textContent='이용권 확인 중 오류가 발생했습니다.';msg.className='auth-message error';return;}
+  const result=Array.isArray(data)?data[0]:data;
+  if(!result?.success){msg.textContent=result?.message||'유효하지 않은 이용코드입니다.';msg.className='auth-message error';return;}
+  msg.textContent=result.message||'이용권이 활성화되었습니다.';msg.className='auth-message ok';input.value='';
+  cloudReady=false;authEntering=false;await enterSession(currentUser);
+});
+document.getElementById('accessSignOutBtn').addEventListener('click',async()=>{await sb.auth.signOut();hideAccess();currentUser=null;cloudReady=false;cloudSnapshot=null;state=emptyState();renderAll();showAuth('다른 계정으로 로그인해주세요.');});
+document.getElementById('accessCode').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('activateCodeBtn').click();});
+[authEmail,authPassword].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter')authLoginBtn.click();}));
+async function bootstrapAuth(){
+  const urlErr=authErrorFromUrl();
+  if(urlErr){showAuth(decodeURIComponent(urlErr.replace(/\+/g,' ')),'error');clearAuthUrl();return;}
+  const recoveryRequested=new URLSearchParams(window.location.search).get('recovery')==='1'||new URLSearchParams((window.location.hash||'').replace(/^#/,'')).get('type')==='recovery';
+  const {data,error}=await sb.auth.getSession();
+  if(error){showAuth(error.message,'error');return;}
+  if(recoveryRequested&&data.session?.user){currentUser=data.session.user;showResetChange();clearAuthUrl();return;}
+  if(data.session?.user)await enterSession(data.session.user);else if(recoveryRequested)showAuth('비밀번호 재설정 링크가 만료되었거나 올바르지 않습니다. 다시 재설정 메일을 요청해주세요.','error');else showAuth();
+}
+sb.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'&&session?.user){currentUser=session.user;showResetChange();clearAuthUrl();return;}
+  if(event==='SIGNED_OUT'){
+    currentUser=null;cloudReady=false;cloudSnapshot=null;hideAccess();if(!recoveryMode)showAuth();return;
+  }
+  if(recoveryMode)return;
+  if((event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED')&&session?.user){
+    queueMicrotask(()=>enterSession(session.user));
+  }
+});
+window.addEventListener('offline',()=>{if(currentUser)setSyncStatus('오프라인 · 기기에 저장됨','syncing');});
+window.addEventListener('online',()=>{if(currentUser){setSyncStatus('다시 연결됨 · 동기화 중','syncing');retryCloudSync();}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser)retryCloudSync();});
+setInterval(()=>{if(currentUser&&cloudReady&&hasPending())retryCloudSync();},15000);
+
+function openMenu(){sideMenu.classList.add('show');menuBackdrop.classList.add('show');sideMenu.setAttribute('aria-hidden','false');}
+function closeMenu(){sideMenu.classList.remove('show');menuBackdrop.classList.remove('show');sideMenu.setAttribute('aria-hidden','true');}
+menuTrigger.addEventListener('click',openMenu);menuClose.addEventListener('click',closeMenu);menuBackdrop.addEventListener('click',closeMenu);
+const homeBrand=document.getElementById('homeBrand');
+homeBrand?.addEventListener('click',()=>setView('home'));
+homeBrand?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setView('home');}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
+function setView(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));
+  document.querySelectorAll('.menu-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  closeMenu();
+  window.scrollTo({top:0,behavior:'instant'});
+  if(view==='visits')setTimeout(()=>document.getElementById('customerPickerInput').focus(),100);
+  if(view==='calendar')renderCalendar();
+  if(view==='settings')checkForUpdates({notify:false});
+  renderAll();
+}
+document.querySelectorAll('.menu-item[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{setView(b.dataset.go);if(b.dataset.action==='add-customer')setTimeout(openCustomerModal,100);}));
+menuSignOutBtn.addEventListener('click',()=>{closeMenu();signOutBtn.click();});
+
+// CUSTOMER MODAL
+const customerModal=document.getElementById('customerModal');
+function openCustomerModal(c=null){
+  cEditId.value=c?.id||'';cName.value=c?.name||'';cPhone.value=c?.phone||'';cStyle.value=c?.style||'';cCycle.value=c?.cycle||35;cMemo.value=c?.memo||'';
+  customerModalTitle.textContent=c?'고객 수정':'고객 등록';deleteCustomerBtn.hidden=!c;customerModal.classList.add('show');customerModal.setAttribute('aria-hidden','false');
+  setTimeout(()=>cName.focus(),120);
+}
+function closeCustomerModal(){customerModal.classList.remove('show');customerModal.setAttribute('aria-hidden','true');}
+[globalAddCustomer,addCustomerTop].forEach(b=>b.addEventListener('click',()=>{closeMenu();openCustomerModal();}));
+closeCustomerModal.addEventListener?.('click',()=>{});
+document.getElementById('closeCustomerModal').addEventListener('click',closeCustomerModal);
+customerModal.addEventListener('click',e=>{if(e.target===customerModal)closeCustomerModal();});
+customerFormEl.addEventListener('submit',e=>{
+  e.preventDefault();
+  const editId=cEditId.value,name=cName.value.trim(),phone=cPhone.value.trim();
+  if(!name)return toast('고객명을 입력하세요.');
+  if(!/^\d{4}$/.test(phone))return toast('연락처 뒤4자리를 입력하세요.');
+  if(state.customers.some(c=>c.name===name&&c.phone===phone&&c.id!==editId))return toast('이미 등록된 고객입니다.');
+  const data={name,phone,style:cStyle.value.trim(),cycle:Number(cCycle.value||35),memo:cMemo.value.trim()};
+  if(editId){const c=state.customers.find(x=>x.id===editId);if(c)Object.assign(c,data);toast('고객 정보를 수정했습니다.');}
+  else{state.customers.push({id:uid(),...data,created:todayISO()});toast('고객을 등록했습니다.');}
+  closeCustomerModal();saveState();
+});
+deleteCustomerBtn.addEventListener('click',()=>{
+  const id=cEditId.value,c=state.customers.find(x=>x.id===id);if(!c)return;
+  if(!confirm(`${c.name} 고객과 방문기록을 모두 삭제할까요?`))return;
+  state.customers=state.customers.filter(x=>x.id!==id);state.visits=state.visits.filter(v=>v.customerId!==id);closeCustomerModal();saveState();
+});
+function editCustomer(id){const c=state.customers.find(x=>x.id===id);if(c)openCustomerModal(c);}
+
+// CUSTOMER LIST
+customerListQuery.addEventListener('input',renderCustomers);
+clearCustomerListQuery.addEventListener('click',()=>{customerListQuery.value='';renderCustomers();customerListQuery.focus();});
+function renderCustomers(){
+  const q=customerListQuery.value.trim().toLowerCase();
+  let arr=state.customers.filter(c=>!q||c.name.toLowerCase().includes(q)||c.phone.includes(q)).slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  if(!arr.length){customerCards.innerHTML='<div class="empty">일치하는 고객이 없습니다.</div>';return;}
+  customerCards.innerHTML=arr.map(c=>{
+    const lv=lastVisit(c.id),cnt=visitsFor(c.id).length;
+    return`<article class="customer-card">
+      <div class="card-top"><div class="name-line"><b>${esc(c.name)}</b><span>${esc(c.phone)}</span></div><button class="text-btn" onclick="editCustomer('${c.id}')">수정</button></div>
+      <div class="card-meta"><div class="meta-box"><small>마지막 방문</small><b>${lv?fmtDate(lv.date):'-'}</b></div><div class="meta-box"><small>총 방문</small><b>${cnt}회</b></div></div>
+      ${c.style?`<div class="card-note"><b>선호 스타일</b> · ${esc(c.style)}</div>`:''}
+      ${c.memo?`<div class="card-note">${esc(c.memo)}</div>`:''}
+      <div class="card-actions"><button onclick="startVisitForCustomer('${c.id}')">방문 기록</button><button class="ghost" onclick="openCustomerSearch('${c.id}')">상세 보기</button></div>
+    </article>`;
+  }).join('');
+}
+function startVisitForCustomer(cid){setView('visits');setTimeout(()=>selectCustomer(cid),80);}
+function openCustomerSearch(cid){const c=state.customers.find(x=>x.id===cid);if(!c)return;sName.value=c.name;sPhone.value=c.phone;setView('search');setTimeout(()=>renderSearchProfile(c),80);}
+
+// CUSTOMER PICKER IN VISIT
+customerPickerInput.addEventListener('input',()=>{
+  vCustomerId.value='';selectedCustomerCard.classList.add('hidden');
+  clearTimeout(customerPickerTimer);customerPickerTimer=setTimeout(renderPickerResults,30);
+});
+customerPickerInput.addEventListener('focus',renderPickerResults);
+clearCustomerPicker.addEventListener('click',()=>{customerPickerInput.value='';vCustomerId.value='';selectedCustomerCard.classList.add('hidden');customerPickerResults.classList.remove('show');customerPickerInput.focus();});
+document.addEventListener('click',e=>{if(!e.target.closest('.picker-wrap'))customerPickerResults.classList.remove('show');});
+function renderPickerResults(){
+  const q=customerPickerInput.value.trim().toLowerCase();
+  let arr=state.customers.filter(c=>!q||c.name.toLowerCase().includes(q)||c.phone.includes(q)).slice().sort((a,b)=>a.name.localeCompare(b.name,'ko')).slice(0,8);
+  if(!state.customers.length){customerPickerResults.innerHTML='<div class="picker-empty">먼저 고객을 등록해주세요.</div>';customerPickerResults.classList.add('show');return;}
+  if(!arr.length){customerPickerResults.innerHTML='<div class="picker-empty">검색 결과가 없습니다.</div>';customerPickerResults.classList.add('show');return;}
+  customerPickerResults.innerHTML=arr.map(c=>`<button type="button" class="picker-option" onclick="selectCustomer('${c.id}')"><b>${esc(c.name)}</b><span>${esc(c.phone)} · ${visitsFor(c.id).length}회 방문</span></button>`).join('');
+  customerPickerResults.classList.add('show');
+}
+function selectCustomer(cid){
+  const c=state.customers.find(x=>x.id===cid);if(!c)return;
+  vCustomerId.value=c.id;customerPickerInput.value=`${c.name} · ${c.phone}`;customerPickerResults.classList.remove('show');
+  selectedCustomerCard.innerHTML=`<div><b>${esc(c.name)} · ${esc(c.phone)}</b><span>${esc(c.style||'선호 스타일 미등록')}</span></div><span>${visitsFor(c.id).length}회 방문</span>`;selectedCustomerCard.classList.remove('hidden');
+  vCycle.value=c.cycle||35;setType(visitsFor(c.id).length?'재방문':'신규');
+}
+function setType(type){vType.value=type;document.querySelectorAll('#typeSegment button').forEach(b=>b.classList.toggle('active',b.dataset.value===type));}
+document.querySelectorAll('#typeSegment button').forEach(b=>b.addEventListener('click',()=>setType(b.dataset.value)));
+
+// VISIT FORM
+[vBeauty,vRetail].forEach(el=>el.addEventListener('input',updateTotalPayPreview));
+function updateTotalPayPreview(){totalPayPreview.textContent=money(Number(vBeauty.value||0)+Number(vRetail.value||0));}
+visitFormEl.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(!vCustomerId.value)return toast('고객을 검색해 선택하세요.');
+  if(!vDate.value)return toast('방문일을 선택하세요.');
+  const beauty=Number(vBeauty.value||0),retail=Number(vRetail.value||0),totalPaid=beauty+retail;const data={customerId:vCustomerId.value,date:vDate.value,type:vType.value,service:vService.value.trim(),totalPaid,serviceAmount:beauty,discount:0,retail,cycle:Number(vCycle.value||0),status:vStatus.value,next:vNext.value,memo:vMemo.value.trim()};
+  if(vEditId.value){const v=state.visits.find(x=>x.id===vEditId.value);if(v)Object.assign(v,data);toast('방문기록을 수정했습니다.');}
+  else{state.visits.push({id:uid(),...data});toast('방문기록을 저장했습니다.');}
+  resetVisitForm();saveState();
+});
+function resetVisitForm(){
+  vEditId.value='';vCustomerId.value='';customerPickerInput.value='';selectedCustomerCard.classList.add('hidden');vDate.value=todayISO();setType('신규');vService.value='';vBeauty.value=0;vRetail.value=0;vCycle.value=35;vStatus.value='미연락';vNext.value='';vMemo.value='';visitSubmitBtn.textContent='방문 저장';cancelVisitEdit.hidden=true;updateTotalPayPreview();
+}
+function editVisit(id){
+  const v=state.visits.find(x=>x.id===id);if(!v)return;setView('visits');
+  setTimeout(()=>{vEditId.value=v.id;selectCustomer(v.customerId);vDate.value=v.date;setType(v.type);vService.value=v.service||'';vBeauty.value=beautyPay(v);vRetail.value=v.retail||0;vCycle.value=v.cycle||35;vStatus.value=v.status||'미연락';vNext.value=v.next||'';vMemo.value=v.memo||'';visitSubmitBtn.textContent='수정 저장';cancelVisitEdit.hidden=false;updateTotalPayPreview();window.scrollTo({top:0,behavior:'smooth'});},60);
+}
+cancelVisitEdit.addEventListener('click',resetVisitForm);
+function deleteVisit(id){if(!confirm('이 방문기록을 삭제할까요?'))return;state.visits=state.visits.filter(v=>v.id!==id);saveState();}
+function renderRecentVisits(){
+  const arr=state.visits.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
+  if(!arr.length){recentVisitCards.innerHTML='<div class="empty">아직 방문기록이 없습니다.</div>';return;}
+  recentVisitCards.innerHTML=arr.map(v=>{const c=customerOf(v);return`<article class="visit-card">
+    <div class="visit-head"><div><div class="visit-date">${fmtDate(v.date)} · ${esc(v.type)}</div><div class="visit-service">${esc(v.service||'시술 미입력')}</div></div><div class="visit-amount">${money(finalPay(v))}</div></div>
+    <div class="visit-extra"><span>${esc(c?.name||'삭제된 고객')} · ${esc(c?.phone||'')}</span><span>콜백 ${fmtDate(callbackDate(v))}</span></div>
+    ${v.memo?`<div class="card-note">${esc(v.memo)}</div>`:''}
+    <div class="card-actions"><button onclick="editVisit('${v.id}')">수정</button><button class="ghost" onclick="deleteVisit('${v.id}')">삭제</button></div>
+  </article>`;}).join('');
+}
+
+// CALLBACK
+callbackFilters.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;callbackFilter=b.dataset.filter;callbackFilters.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderCallbacks();});
+function filterCallbackItem(item){if(callbackFilter==='all')return true;if(callbackFilter==='overdue')return item.d.diff<0;if(callbackFilter==='today')return item.d.diff===0;if(callbackFilter==='soon')return item.d.diff>0&&item.d.diff<=7;return true;}
+function updateStatus(vid,status){const v=state.visits.find(x=>x.id===vid);if(v){v.status=status;saveState();toast(`${status} 처리했습니다.`);}}
+function renderCallbacks(){
+  const items=callbackItems().filter(filterCallbackItem);
+  if(!items.length){callbackCards.innerHTML='<div class="empty">해당 조건의 콜백 고객이 없습니다.</div>';return;}
+  callbackCards.innerHTML=items.map(({c,v,d})=>`<article class="callback-card">
+    <div class="due-line"><div class="name-line"><b>${esc(c.name)}</b><span>${esc(c.phone)}</span></div><span class="badge ${d.cls}">${d.text}</span></div>
+    <div class="service-line">최근 방문 ${fmtDate(v.date)} · ${esc(v.service||'-')}<br>콜백 예정 ${fmtDate(callbackDate(v))}</div>
+    <div class="callback-status"><button onclick="updateStatus('${v.id}','연락완료')">연락완료</button><button onclick="updateStatus('${v.id}','예약확정')">예약확정</button><button class="ghost" onclick="updateStatus('${v.id}','보류')">보류</button><button class="ghost" onclick="openCustomerSearch('${c.id}')">고객보기</button></div>
+  </article>`).join('');
+}
+
+// SEARCH
+let lastSearchMatches=[];
+searchBtn.addEventListener('click',searchCustomer);
+[sName,sPhone].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchCustomer();}}));
+function searchCustomer(){
+  const n=sName.value.trim(),p=sPhone.value.trim();
+  if(!n&&!p){searchResult.innerHTML='<div class="empty">고객명 또는 뒤4자리를 입력해주세요.</div>';return;}
+  const nl=n.toLocaleLowerCase('ko-KR');
+  let matches=state.customers.filter(c=>{
+    const name=(c.name||'').toLocaleLowerCase('ko-KR'),phone=String(c.phone||'');
+    if(n&&p)return name===nl&&phone===p;
+    if(n)return name.includes(nl);
+    return phone===p;
+  });
+  matches.sort((a,b)=>{
+    const ae=n&&a.name.toLocaleLowerCase('ko-KR')===nl?0:1,be=n&&b.name.toLocaleLowerCase('ko-KR')===nl?0:1;
+    return ae-be||a.name.localeCompare(b.name,'ko')||a.phone.localeCompare(b.phone);
+  });
+  lastSearchMatches=matches;
+  if(!matches.length){searchResult.innerHTML='<div class="empty">일치하는 고객을 찾지 못했습니다.</div>';return;}
+  if(matches.length===1){renderSearchProfile(matches[0]);return;}
+  renderSearchCandidates();
+}
+function renderSearchCandidates(){
+  const matches=lastSearchMatches;
+  if(!matches.length)return searchCustomer();
+  searchResult.innerHTML=`<div class="panel"><div class="panel-head"><div><h2>검색 결과 ${matches.length}명</h2><p>동명이인 또는 같은 뒤4자리가 있습니다. 고객을 선택해주세요.</p></div></div><div class="search-candidates">${matches.map(c=>{const lv=lastVisit(c.id),cnt=visitsFor(c.id).length;return`<button class="search-candidate" onclick="selectSearchCustomer('${c.id}')"><span class="search-candidate-main"><b>${esc(c.name)}</b><span>${esc(c.phone)}</span></span><span class="search-candidate-meta">${cnt}회 · ${lv?fmtDate(lv.date):'방문 없음'} ›</span></button>`;}).join('')}</div></div>`;
+}
+function selectSearchCustomer(cid){const c=state.customers.find(x=>x.id===cid);if(c)renderSearchProfile(c);}
+function renderSearchProfile(c){
+  const vs=visitsFor(c.id).slice().sort((a,b)=>b.date.localeCompare(a.date)),total=vs.reduce((s,v)=>s+finalPay(v),0),avg=vs.length?Math.round(total/vs.length):0,lv=vs[0];
+  const back=lastSearchMatches.length>1?'<button class="secondary-btn full" style="margin-bottom:10px" onclick="renderSearchCandidates()">‹ 검색 결과 목록으로</button>':'';
+  searchResult.innerHTML=`${back}<article class="profile-card">
+    <div class="profile-title"><h2>${esc(c.name)} <span>${esc(c.phone)}</span></h2><button class="text-btn" onclick="editCustomer('${c.id}')">수정</button></div>
+    <div class="profile-stats"><div class="profile-stat"><span>총 방문</span><b>${vs.length}회</b></div><div class="profile-stat"><span>누적 결제</span><b>${money(total)}</b></div><div class="profile-stat"><span>평균 객단가</span><b>${money(avg)}</b></div><div class="profile-stat"><span>마지막 방문</span><b>${lv?fmtDate(lv.date):'-'}</b></div></div>
+    <div class="profile-copy"><small>선호 스타일</small>${esc(c.style||'-')}</div><div class="profile-copy"><small>고객 메모</small>${esc(c.memo||'-')}</div>
+    <button class="primary-btn full" onclick="startVisitForCustomer('${c.id}')">+ 새 방문 기록</button>
+  </article>
+  <div class="panel"><div class="panel-head"><div><h2>방문이력</h2><p>최근 100회까지 표시</p></div></div><div class="stack">${vs.length?vs.slice(0,100).map(v=>`<article class="history-card"><div class="history-top"><div><div class="visit-date">${fmtDate(v.date)}</div><b>${esc(v.service||'-')}</b></div><div class="history-pay">${money(finalPay(v))}</div></div><div class="visit-extra"><span>${esc(v.type)}</span><span>${v.status}</span></div>${v.memo?`<div class="history-memo">${esc(v.memo)}</div>`:''}</article>`).join(''):'<div class="empty">방문이력이 없습니다.</div>'}</div></div>`;
+}
+
+// HOME
+function renderHome(){
+  const m=todayISO().slice(0,7),arr=monthVisits(m),beauty=arr.reduce((sum,v)=>sum+beautyPay(v),0),retail=arr.reduce((sum,v)=>sum+Number(v.retail||0),0),total=arr.reduce((sum,v)=>sum+finalPay(v),0),newCnt=arr.filter(v=>v.type==='신규').length,retCnt=arr.filter(v=>v.type==='재방문').length,cbs=callbackItems();
+  homeMonthLabel.textContent=`${m.slice(0,4)}년 ${Number(m.slice(5,7))}월`;
+  homeMetrics.innerHTML=[['등록 고객',state.customers.length+'명'],['이번달 방문',arr.length+'회'],['신규',newCnt+'명'],['재방문',retCnt+'명']].map(([a,b])=>`<div class="metric"><span>${a}</span><strong>${b}</strong></div>`).join('');
+  homeSalesSummary.innerHTML=`<div class="sales-box"><span>미용매출</span><strong>${money(beauty)}</strong></div><div class="sales-box"><span>점판매출</span><strong>${money(retail)}</strong></div><div class="sales-box total"><span>총매출</span><strong>${money(total)}</strong></div>`;
+  const goal=Number(state.goals.beauty||0)+Number(state.goals.retail||0),rate=goal?total/goal*100:0;
+  homeGoal.innerHTML=`<div class="goal-copy"><span>목표 ${money(goal)}</span><b>${rate.toFixed(1)}%</b></div><div class="progress-track"><div class="progress-bar" style="width:${Math.min(100,rate)}%"></div></div>`;
+  const recent=state.visits.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
+  homeRecentPreview.innerHTML=recent.length?recent.map(v=>{const c=customerOf(v);return`<article class="home-preview-card"><div><b>${esc(c?.name||'삭제된 고객')}</b><span>${fmtDate(v.date)} · ${esc(v.service||'시술 미입력')}</span></div><strong>${money(finalPay(v))}</strong></article>`;}).join(''):'<div class="empty compact-empty">아직 방문기록이 없습니다.</div>';
+  homeCallbackPreview.innerHTML=cbs.length?cbs.slice(0,4).map(({c,v,d})=>`<article class="callback-card"><div class="due-line"><div class="name-line"><b>${esc(c.name)}</b><span>${esc(c.phone)}</span></div><span class="badge ${d.cls}">${d.text}</span></div><div class="service-line">${esc(v.service||'-')} · ${fmtDate(callbackDate(v))}</div></article>`).join(''):'<div class="empty">현재 연락할 고객이 없습니다.</div>';
+  goalBeauty.value=state.goals.beauty||0;goalRetail.value=state.goals.retail||0;
+}
+
+// MONTHLY DASHBOARD
+function renderMonthlyDashboard(){
+  if(!document.getElementById('dashboardMonth'))return;
+  const m=dashboardMonth.value||todayISO().slice(0,7),arr=monthVisits(m);
+  const beauty=arr.reduce((sum,v)=>sum+beautyPay(v),0),retail=arr.reduce((sum,v)=>sum+Number(v.retail||0),0),total=arr.reduce((sum,v)=>sum+finalPay(v),0);
+  const newCnt=arr.filter(v=>v.type==='신규').length,retCnt=arr.filter(v=>v.type==='재방문').length,avg=arr.length?Math.round(total/arr.length):0,returnRate=arr.length?retCnt/arr.length*100:0;
+  dashboardMonthLabel.textContent=`${m.slice(0,4)}년 ${Number(m.slice(5,7))}월`;
+  dashboardSalesSummary.innerHTML=`<div class="sales-box"><span>미용매출</span><strong>${money(beauty)}</strong></div><div class="sales-box"><span>점판매출</span><strong>${money(retail)}</strong></div><div class="sales-box total"><span>총매출</span><strong>${money(total)}</strong></div>`;
+  dashboardMetrics.innerHTML=[['총 방문',arr.length+'회'],['평균 객단가',money(avg)],['신규',newCnt+'명'],['재방문',retCnt+'명'],['재방문율',returnRate.toFixed(1)+'%']].map(([a,b])=>`<div class="dashboard-metric"><span>${a}</span><strong>${b}</strong></div>`).join('');
+  const goalBeautyNum=Number(state.goals.beauty||0),goalRetailNum=Number(state.goals.retail||0),goalTotal=goalBeautyNum+goalRetailNum;
+  const goalRows=[['미용 목표',beauty,goalBeautyNum],['점판 목표',retail,goalRetailNum],['총매출 목표',total,goalTotal]];
+  dashboardGoals.innerHTML=goalRows.map(([name,value,goal])=>{const rate=goal?value/goal*100:0;return`<div class="goal-row"><div class="goal-copy"><span>${name} ${money(goal)}</span><b>${rate.toFixed(1)}%</b></div><div class="progress-track"><div class="progress-bar" style="width:${Math.min(100,rate)}%"></div></div><small>${money(value)} / ${money(goal)}</small></div>`;}).join('');
+  const visits=arr.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+  dashboardVisitPreview.innerHTML=visits.length?visits.map(v=>{const c=customerOf(v);return`<article class="home-preview-card"><div><b>${esc(c?.name||'삭제된 고객')} <em>${esc(v.type)}</em></b><span>${fmtDate(v.date)} · ${esc(v.service||'시술 미입력')}</span></div><strong>${money(finalPay(v))}</strong></article>`;}).join(''):'<div class="empty">이달 방문기록이 없습니다.</div>';
+}
+dashboardMonth.value=todayISO().slice(0,7);
+dashboardMonth.addEventListener('change',renderMonthlyDashboard);
+
+
+// CALENDAR
+let calendarSelectedDate=todayISO();
+let calendarCursor=todayISO().slice(0,7);
+function isoFromParts(y,m,d){return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function dayVisits(date){return state.visits.filter(v=>v.date===date).sort((a,b)=>(a.service||'').localeCompare(b.service||''));}
+function noteForDate(date){return state.dailyNotes.find(n=>n.date===date);}
+function shortMoney(n){n=Number(n)||0;if(n>=1000000)return (n/10000).toFixed(n%10000?1:0)+'만';if(n>=10000)return Math.round(n/10000)+'만';return n.toLocaleString('ko-KR');}
+function shiftCalendarMonth(delta){const [y,m]=calendarCursor.split('-').map(Number);const d=new Date(y,m-1+delta,1);calendarCursor=isoFromParts(d.getFullYear(),d.getMonth()+1,1).slice(0,7);renderCalendar();}
+function selectCalendarDate(date){calendarSelectedDate=date;calendarCursor=date.slice(0,7);renderCalendar();}
+function renderCalendar(){
+  if(!document.getElementById('calendarGrid'))return;
+  const [year,month]=calendarCursor.split('-').map(Number),first=new Date(year,month-1,1),start=new Date(year,month-1,1-first.getDay());
+  calendarMonthTitle.textContent=`${year}년 ${month}월`;
+  const monthArr=monthVisits(calendarCursor),monthBeauty=monthArr.reduce((sum,v)=>sum+beautyPay(v),0),monthRetail=monthArr.reduce((sum,v)=>sum+Number(v.retail||0),0),monthTotal=monthArr.reduce((sum,v)=>sum+finalPay(v),0);
+  calendarMonthSummary.innerHTML=`<span>${month}월 총매출</span><strong>${money(monthTotal)}</strong><small>방문 ${monthArr.length}회 · 미용 ${money(monthBeauty)} · 점판 ${money(monthRetail)}</small>`;
+  let html='';
+  for(let i=0;i<42;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const date=isoFromParts(d.getFullYear(),d.getMonth()+1,d.getDate()),arr=dayVisits(date),total=arr.reduce((sum,v)=>sum+finalPay(v),0),note=noteForDate(date);
+    const cls=['cal-day'];if(d.getMonth()!=month-1)cls.push('outside');if(date===todayISO())cls.push('today');if(date===calendarSelectedDate)cls.push('selected');if(note?.memo)cls.push('has-note');
+    html+=`<button class="${cls.join(' ')}" data-date="${date}"><span class="cal-day-num">${d.getDate()}</span>${arr.length?`<span class="cal-day-stat">${arr.length}명 방문</span><span class="cal-day-money">${shortMoney(total)}원</span>`:''}</button>`;
+  }
+  calendarGrid.innerHTML=html;
+  const arr=dayVisits(calendarSelectedDate),beauty=arr.reduce((sum,v)=>sum+beautyPay(v),0),retail=arr.reduce((sum,v)=>sum+Number(v.retail||0),0),total=arr.reduce((sum,v)=>sum+finalPay(v),0);
+  const sd=new Date(calendarSelectedDate+'T00:00:00');calendarSelectedTitle.textContent=`${sd.getMonth()+1}월 ${sd.getDate()}일`;
+  calendarDaySummary.innerHTML=`<div class="day-sum"><span>방문</span><b>${arr.length}명</b></div><div class="day-sum"><span>미용매출</span><b>${money(beauty)}</b></div><div class="day-sum"><span>점판매출</span><b>${money(retail)}</b></div><div class="day-sum"><span>총매출</span><b>${money(total)}</b></div>`;
+  calendarVisitList.innerHTML=arr.length?arr.map(v=>{const c=customerOf(v);return`<article class="calendar-visit"><div class="calendar-visit-top"><div><b>${esc(c?.name||'삭제된 고객')} <span style="color:var(--muted);font-size:11px">${esc(c?.phone||'')}</span></b><small>${esc(v.service||'시술 미입력')} · ${esc(v.type||'')}</small></div><strong>${money(finalPay(v))}</strong></div>${v.memo?`<small>${esc(v.memo)}</small>`:''}<div class="calendar-visit-actions"><button onclick="editVisit('${v.id}')">기록 수정</button>${c?`<button onclick="openCustomerSearch('${c.id}')">고객 보기</button>`:''}</div></article>`;}).join(''):'<div class="empty">이 날짜의 방문기록이 없습니다.</div>';
+  calendarMemo.value=noteForDate(calendarSelectedDate)?.memo||'';
+}
+calendarGrid.addEventListener('click',e=>{const b=e.target.closest('[data-date]');if(b)selectCalendarDate(b.dataset.date);});
+calendarPrev.addEventListener('click',()=>shiftCalendarMonth(-1));calendarNext.addEventListener('click',()=>shiftCalendarMonth(1));
+calendarTodayBtn.addEventListener('click',()=>{calendarSelectedDate=todayISO();calendarCursor=todayISO().slice(0,7);renderCalendar();});
+calendarAddVisit.addEventListener('click',()=>{const date=calendarSelectedDate;setView('visits');setTimeout(()=>{resetVisitForm();vDate.value=date;window.scrollTo({top:0,behavior:'instant'});customerPickerInput.focus();},80);});
+saveCalendarMemo.addEventListener('click',()=>{const memo=calendarMemo.value.trim();let n=noteForDate(calendarSelectedDate);if(memo){if(n)n.memo=memo;else state.dailyNotes.push({id:uid(),date:calendarSelectedDate,memo});}else if(n){state.dailyNotes=state.dailyNotes.filter(x=>x.id!==n.id);}saveState();toast(memo?'메모를 저장했습니다.':'메모를 삭제했습니다.');});
+
+// HOME SCREEN INSTALL / PWA
+let deferredInstallPrompt=null;
+function appIsStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+function refreshInstallState(){
+  if(!document.getElementById('installStatus'))return;
+  if(appIsStandalone()){
+    installStatus.textContent='설치됨 · 홈 화면 아이콘으로 실행 중입니다.';installStatus.classList.add('done');installAppBtn.textContent='설치됨';installAppBtn.disabled=true;
+  }else{
+    installStatus.textContent='미설치 · 홈 화면에 추가하면 주소창 없이 앱처럼 사용할 수 있습니다.';installStatus.classList.remove('done');installAppBtn.textContent=deferredInstallPrompt?'설치하기':'설치 방법';installAppBtn.disabled=false;
+  }
+}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;refreshInstallState();});
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;refreshInstallState();toast('MY CLIENT BOOK이 홈 화면에 설치되었습니다.');});
+installAppBtn.addEventListener('click',async()=>{
+  if(appIsStandalone())return;
+  if(deferredInstallPrompt){deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;refreshInstallState();return;}
+  const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isiOS){alert('아이폰 설치 방법\n\n1. Safari 아래의 공유 버튼(□↑) 누르기\n2. “홈 화면에 추가” 선택\n3. 오른쪽 위 “추가” 누르기\n\n이후 홈 화면의 MY CLIENT BOOK 아이콘으로 실행하면 됩니다.');}
+  else{alert('브라우저 메뉴에서 “앱 설치” 또는 “홈 화면에 추가”를 선택해주세요.');}
+});
+refreshInstallState();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{}));}
+
+// APP UPDATE CENTER
+function compareVersion(a,b){
+  const A=String(a||'0').split('.').map(Number),B=String(b||'0').split('.').map(Number),n=Math.max(A.length,B.length);
+  for(let i=0;i<n;i++){const x=A[i]||0,y=B[i]||0;if(x>y)return 1;if(x<y)return-1;}return 0;
+}
+function renderReleaseNotes(rel=latestRelease){
+  if(!document.getElementById('releaseNotes'))return;
+  const features=Array.isArray(rel.features)?rel.features:[],fixes=Array.isArray(rel.fixes)?rel.fixes:[];
+  currentAppVersion.textContent='v'+APP_VERSION;
+  releaseNotes.innerHTML=`<div class="release-title"><b>v${esc(rel.version||APP_VERSION)} 업데이트 내용</b><span>${esc(rel.date||'')}</span></div>${features.length?`<h3>새 기능 · 개선</h3><ul>${features.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${fixes.length?`<h3>버그 수정</h3><ul>${fixes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}`;
+}
+async function checkForUpdates({notify=true}={}){
+  if(!document.getElementById('updateBadge'))return;
+  updateBadge.textContent='확인 중';updateBadge.classList.remove('new');updateApplyBtn.hidden=true;
+  try{
+    const res=await fetch('/version.json?t='+Date.now(),{cache:'no-store'});if(!res.ok)throw new Error('version');
+    const rel=await res.json();latestRelease=rel?.version?rel:LOCAL_RELEASE;renderReleaseNotes(latestRelease);
+    const cmp=compareVersion(latestRelease.version,APP_VERSION);
+    if(cmp>0){
+      updateBadge.textContent='새 버전 v'+latestRelease.version;updateBadge.classList.add('new');updateApplyBtn.hidden=false;
+      const key='mcb_update_notified_'+latestRelease.version;
+      if(notify&&!sessionStorage.getItem(key)){sessionStorage.setItem(key,'1');toast(`새 업데이트 v${latestRelease.version}이 있습니다. 설정에서 확인하세요.`);}
+    }else{updateBadge.textContent='최신 버전';updateBadge.classList.remove('new');updateApplyBtn.hidden=true;}
+  }catch(e){latestRelease=LOCAL_RELEASE;renderReleaseNotes(latestRelease);updateBadge.textContent='확인 실패';updateBadge.classList.remove('new');}
+}
+updateCheckBtn.addEventListener('click',()=>checkForUpdates({notify:false}));
+updateApplyBtn.addEventListener('click',()=>{updateApplyBtn.disabled=true;updateApplyBtn.textContent='업데이트 중…';location.href=window.location.origin+'/?update='+Date.now();});
+renderReleaseNotes(LOCAL_RELEASE);
+setTimeout(()=>checkForUpdates({notify:true}),1800);
+
+// GOALS + BACKUP
+saveGoals.addEventListener('click',()=>{state.goals={beauty:Number(goalBeauty.value||0),retail:Number(goalRetail.value||0)};saveState();toast('목표를 저장했습니다.');});
+backupBtn.addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`MY_CLIENT_BOOK_backup_${todayISO()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);});
+restoreBtn.addEventListener('click',()=>restoreInput.click());
+restoreInput.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!Array.isArray(x.customers)||!Array.isArray(x.visits))throw 0;if(confirm('현재 데이터를 백업 파일로 교체할까요?')){state=x;state.dailyNotes=Array.isArray(state.dailyNotes)?state.dailyNotes:[];state.goals=state.goals||{beauty:5000000,retail:500000};saveState();toast('복원했습니다.');}}catch{alert('올바른 백업 파일이 아닙니다.');}};r.readAsText(f);e.target.value='';});
+function csvCell(v){return`"${String(v??'').replaceAll('"','""')}"`;}
+function downloadCSV(name,rows){const text='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\n'),blob=new Blob([text],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+exportCustomersCsv.addEventListener('click',()=>downloadCSV(`MY_CLIENT_BOOK_customers_${todayISO()}.csv`,[['고객명','연락처 뒤4자리','선호스타일','재방문주기','메모'],...state.customers.map(c=>[c.name,c.phone,c.style||'',c.cycle||35,c.memo||''])]));
+exportVisitsCsv.addEventListener('click',()=>downloadCSV(`MY_CLIENT_BOOK_visits_${todayISO()}.csv`,[['방문일','고객명','뒤4자리','구분','시술','총 결제금액','점판매출','미용매출','재방문주기','콜백상태','다음예약일','메모'],...state.visits.map(v=>{const c=customerOf(v);return[v.date,c?.name||'',c?.phone||'',v.type,v.service,finalPay(v),v.retail||0,beautyPay(v),v.cycle,v.status,v.next||'',v.memo||''];})]));
+
+// SAMPLE
+sampleBtn.addEventListener('click',()=>{
+  if(state.customers.some(c=>c.name==='홍길동'&&c.phone==='4821'))return toast('이미 샘플이 있습니다.');
+  if((state.customers.length||state.visits.length)&&!confirm('현재 데이터에 샘플을 추가할까요?'))return;
+  const customers=[['홍길동','4821','컷+다운펌','옆머리가 잘 뜨는 편'],['김민준','1934','쉐도우펌','자연스러운 컬 선호'],['이서준','7712','디자인컷','앞머리 손질 어려움']].map(x=>({id:uid(),name:x[0],phone:x[1],style:x[2],memo:x[3],cycle:28,created:'2026-06-01'}));state.customers.push(...customers);
+  const [a,b,c]=customers;state.visits.push(
+    {id:uid(),customerId:a.id,date:'2026-08-08',type:'재방문',service:'컷+다운펌',serviceAmount:85000,discount:0,retail:0,cycle:25,status:'연락완료',next:'2026-09-02',memo:'앞머리 조금 길게'},
+    {id:uid(),customerId:a.id,date:'2026-09-02',type:'재방문',service:'컷+다운펌',serviceAmount:85000,discount:0,retail:0,cycle:28,status:'미연락',next:'',memo:'다운펌 강도 기존과 동일'},
+    {id:uid(),customerId:b.id,date:'2026-08-19',type:'신규',service:'쉐도우펌',serviceAmount:165000,discount:10000,retail:25000,cycle:35,status:'미연락',next:'',memo:'컬 너무 강하지 않게'},
+    {id:uid(),customerId:c.id,date:'2026-08-23',type:'신규',service:'디자인컷',serviceAmount:45000,discount:0,retail:0,cycle:28,status:'미연락',next:'',memo:'앞머리 가볍게'}
+  );state.dailyNotes.push({id:uid(),date:'2026-09-02',memo:'오후 촬영 준비 · 제품 재고 확인'});saveState();toast('샘플을 추가했습니다.');
+});
+
+function renderAll(){renderHome();renderCustomers();renderRecentVisits();renderCallbacks();renderMonthlyDashboard();renderCalendar();if(searchResult.innerHTML&&sName.value)searchCustomer();}
+
+vDate.value=todayISO();updateTotalPayPreview();renderAll();bootstrapAuth();
+
+</script>
+</body>
+</html>
