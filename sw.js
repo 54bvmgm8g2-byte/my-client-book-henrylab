@@ -1,4 +1,4 @@
-const CACHE_NAME='mcb-shell-v2.13';
+const CACHE_NAME='mcb-shell-v2.14';
 const SHELL=['/','/manifest.webmanifest','/icon-192.png','/icon-512.png'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).catch(()=>{}));
