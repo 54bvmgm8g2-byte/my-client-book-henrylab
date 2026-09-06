@@ -77,6 +77,42 @@ grant execute on function private.app_can_write(uuid) to authenticated;
 grant execute on function private.app_can_insert_customer(uuid) to authenticated;
 grant execute on function private.app_can_insert_visit(uuid) to authenticated;
 
+create or replace function private.enforce_trial_row_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_is_trial boolean;
+  v_count bigint;
+  v_limit integer;
+begin
+  perform pg_advisory_xact_lock(hashtextextended('mcb-trial-limit:'||new.user_id::text,0));
+  select exists(
+    select 1 from public.app_entitlements e
+    where e.user_id=new.user_id and e.status='trial' and e.source='trial' and e.expires_at>now()
+  ) into v_is_trial;
+  if not v_is_trial then return new; end if;
+  if tg_table_name='customers' then
+    select count(*) into v_count from public.customers c where c.user_id=new.user_id;
+    v_limit:=50;
+  elsif tg_table_name='visits' then
+    select count(*) into v_count from public.visits v where v.user_id=new.user_id;
+    v_limit:=100;
+  else
+    return new;
+  end if;
+  if v_count>=v_limit then raise exception '무료체험 등록 한도에 도달했습니다.' using errcode='check_violation'; end if;
+  return new;
+end;
+$$;
+revoke all on function private.enforce_trial_row_limit() from public,anon,authenticated;
+drop trigger if exists customers_enforce_trial_limit on public.customers;
+create trigger customers_enforce_trial_limit before insert on public.customers for each row execute function private.enforce_trial_row_limit();
+drop trigger if exists visits_enforce_trial_limit on public.visits;
+create trigger visits_enforce_trial_limit before insert on public.visits for each row execute function private.enforce_trial_row_limit();
+
 drop policy if exists customers_insert_own on public.customers;
 drop policy if exists customers_update_own on public.customers;
 drop policy if exists customers_delete_own on public.customers;
