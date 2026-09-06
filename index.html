@@ -1340,9 +1340,9 @@ function csvCell(v){return`"${String(v??'').replaceAll('"','""')}"`;}
 async function downloadCSV(name,rows){
   const text='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\n');
   const blob=new Blob([text],{type:'text/csv;charset=utf-8'});
-  if(navigator.share&&typeof File!=='undefined'){
+  if(navigator.share&&navigator.canShare&&typeof File!=='undefined'){
     const file=new File([blob],name,{type:'text/csv;charset=utf-8'});
-    try{if(!navigator.canShare||navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return true;}}catch(e){if(e?.name==='AbortError')return false;}
+    try{if(navigator.canShare({files:[file]})){await navigator.share({files:[file]});return true;}}catch(e){if(e?.name==='AbortError')return false;}
   }
   const a=document.createElement('a'),url=URL.createObjectURL(blob);
   a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);return true;
@@ -1374,9 +1374,10 @@ async function downloadXLSX(name,sheetName,rows){
   }
   const centralData=join(central),bytes=join([...local,centralData,u32(0x06054b50),u16(0),u16(0),u16(central.length),u16(central.length),u32(centralData.length),u32(offset),u16(0)]);
   const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  if(navigator.share&&typeof File!=='undefined'){
+  if(bytes.length<1000||bytes[0]!==80||bytes[1]!==75)throw new Error('Invalid Excel workbook');
+  if(navigator.share&&navigator.canShare&&typeof File!=='undefined'){
     const file=new File([blob],name,{type:blob.type});
-    try{if(!navigator.canShare||navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return true;}}catch(e){if(e?.name==='AbortError')return false;}
+    try{if(navigator.canShare({files:[file]})){await navigator.share({files:[file]});return true;}}catch(e){if(e?.name==='AbortError')return false;}
   }
   const a=document.createElement('a'),url=URL.createObjectURL(blob);
   a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);return true;
