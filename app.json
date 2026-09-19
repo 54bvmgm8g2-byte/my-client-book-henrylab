@@ -2,7 +2,7 @@
   "expo": {
     "name": "MY CLIENT BOOK",
     "slug": "my-client-book",
-    "version": "3.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
