@@ -62,6 +62,23 @@ const monthKey = (iso = todayIso()) => iso.slice(0, 7);
 const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3) | 8).toString(16); });
 const cacheKey = (uid: string) => `my-client-book-v4-data-${uid}`;
 const pendingKey = (uid: string) => `my-client-book-v4-pending-${uid}`;
+const LEGACY_KEY = 'my-client-book-v3-data';
+
+function migrateLegacy(raw: string): AppData {
+  const parsed = JSON.parse(raw) as { customers?: Array<Partial<Customer> & { id?: string }>; visits?: Array<Partial<Visit> & { customerId?: string }> };
+  const idMap = new Map<string, string>();
+  const customers = (parsed.customers ?? []).map((c) => {
+    const nextId = uuid();
+    if (c.id) idMap.set(c.id, nextId);
+    return { id: nextId, name: c.name ?? '이름 없음', phoneLast4: String(c.phoneLast4 ?? '').replace(/\D/g, '').slice(-4).padStart(4, '0'), preferredStyle: c.preferredStyle ?? '', notes: c.notes ?? '', revisitDays: c.revisitDays ?? 28, createdAt: c.createdAt ?? new Date().toISOString() };
+  });
+  const visits = (parsed.visits ?? []).flatMap((v) => {
+    const customerId = v.customerId ? idMap.get(v.customerId) : undefined;
+    if (!customerId) return [];
+    return [{ id: uuid(), customerId, date: v.date ?? todayIso(), service: v.service ?? '', memo: v.memo ?? '', price: v.price ?? 0, discount: v.discount ?? 0, productSales: v.productSales ?? 0, callbackDone: v.callbackDone ?? false, createdAt: new Date().toISOString() }];
+  });
+  return { customers, visits };
+}
 
 async function readCloud(uid: string): Promise<AppData> {
   const [{ data: customers, error: ce }, { data: visits, error: ve }] = await Promise.all([
@@ -164,7 +181,7 @@ export default function App() {
     (async () => {
       setLoaded(false);
       try {
-        const [cached, pending, settings] = await Promise.all([AsyncStorage.getItem(cacheKey(session.user.id)), AsyncStorage.getItem(pendingKey(session.user.id)), AsyncStorage.getItem(SETTINGS_KEY)]);
+        const [cached, pending, legacy, settings] = await Promise.all([AsyncStorage.getItem(cacheKey(session.user.id)), AsyncStorage.getItem(pendingKey(session.user.id)), AsyncStorage.getItem(LEGACY_KEY), AsyncStorage.getItem(SETTINGS_KEY)]);
         if (settings) {
           const parsed = JSON.parse(settings);
           setFaceIdEnabled(Boolean(parsed.faceIdEnabled));
@@ -177,9 +194,13 @@ export default function App() {
           await AsyncStorage.removeItem(pendingKey(session.user.id));
         } else {
           const cloud = await readCloud(session.user.id);
-          const initial = cloud.customers.length || cloud.visits.length ? cloud : cached ? JSON.parse(cached) as AppData : { customers: [], visits: [] };
+          const initial = cloud.customers.length || cloud.visits.length ? cloud : cached ? JSON.parse(cached) as AppData : legacy ? migrateLegacy(legacy) : { customers: [], visits: [] };
           if (active) setData(initial);
-          if (!cloud.customers.length && !cloud.visits.length && cached) await writeCloud(initial, session.user.id);
+          if (!cloud.customers.length && !cloud.visits.length && (cached || legacy)) {
+            await writeCloud(initial, session.user.id);
+            await AsyncStorage.setItem(cacheKey(session.user.id), JSON.stringify(initial));
+            if (legacy) await AsyncStorage.removeItem(LEGACY_KEY);
+          }
         }
         if (active) setSyncPending(false);
       } catch {
