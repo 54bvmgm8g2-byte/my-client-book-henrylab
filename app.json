@@ -10,14 +10,12 @@
       "bundleIdentifier": "com.henrylab.myclientbook",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "고객 시술 사진을 기록하기 위해 카메라를 사용합니다.",
-        "NSPhotoLibraryUsageDescription": "고객 시술 사진을 기록하기 위해 사진 보관함을 사용합니다.",
         "NSFaceIDUsageDescription": "고객 정보를 안전하게 보호하기 위해 Face ID를 사용합니다."
       }
     },
-    "plugins": ["expo-image-picker", "expo-local-authentication"],
+    "plugins": ["expo-local-authentication"],
     "extra": {
-      "privacyMode": "local-only",
+      "privacyMode": "account-sync",
       "distribution": "paid"
     }
   }
