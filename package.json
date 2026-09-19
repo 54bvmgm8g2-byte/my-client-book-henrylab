@@ -1,0 +1,27 @@
+{
+  "name": "my-client-book",
+  "version": "3.0.0",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "expo": "~57.0.23",
+    "expo-file-system": "~57.0.7",
+    "expo-image-picker": "~57.0.18",
+    "expo-local-authentication": "~57.0.3",
+    "expo-sharing": "~57.0.20",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}
