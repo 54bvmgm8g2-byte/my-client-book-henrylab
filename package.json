@@ -11,14 +11,15 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@supabase/supabase-js": "2.116.0",
     "expo": "~57.0.23",
     "expo-file-system": "~57.0.7",
-    "expo-image-picker": "~57.0.18",
     "expo-local-authentication": "~57.0.3",
     "expo-sharing": "~57.0.20",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-native": "0.86.3",
+    "react-native-url-polyfill": "4.0.0"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
