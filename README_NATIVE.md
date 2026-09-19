@@ -1,4 +1,4 @@
-# MY CLIENT BOOK Native v3
+# MY CLIENT BOOK Native 1.0
 
 Paid, local-first iOS customer record app for beauty professionals.
 
