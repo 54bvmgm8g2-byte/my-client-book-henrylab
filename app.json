@@ -3,6 +3,7 @@
     "name": "MY CLIENT BOOK",
     "slug": "my-client-book",
     "version": "1.0.0",
+    "icon": "./assets/icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
