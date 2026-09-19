@@ -1,14 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as ImagePicker from 'expo-image-picker';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
+import type { Session } from '@supabase/supabase-js';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -21,13 +20,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { supabase } from './supabase';
 
-type Category = '남성' | '여성' | '기타';
 type Customer = {
   id: string;
   name: string;
   phoneLast4: string;
-  category: Category;
   preferredStyle: string;
   notes: string;
   revisitDays: number;
@@ -42,19 +40,17 @@ type Visit = {
   price: number;
   discount: number;
   productSales: number;
-  photoUri?: string;
   callbackDone?: boolean;
+  createdAt: string;
 };
 type AppData = { customers: Customer[]; visits: Visit[] };
 type Tab = 'home' | 'customers' | 'callbacks' | 'stats' | 'settings';
 
-const STORAGE_KEY = 'my-client-book-v3-data';
 const SETTINGS_KEY = 'my-client-book-v3-settings';
 const ACCENT = '#1f6f5c';
 const BG = '#f4f5f2';
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
-const id = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const money = (value: number) => `${Math.round(value).toLocaleString('ko-KR')}원`;
 const parseMoney = (value: string) => Number(value.replace(/[^0-9]/g, '')) || 0;
 const addDays = (iso: string, days: number) => {
@@ -63,6 +59,33 @@ const addDays = (iso: string, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 const monthKey = (iso = todayIso()) => iso.slice(0, 7);
+const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3) | 8).toString(16); });
+const cacheKey = (uid: string) => `my-client-book-v4-data-${uid}`;
+const pendingKey = (uid: string) => `my-client-book-v4-pending-${uid}`;
+
+async function readCloud(uid: string): Promise<AppData> {
+  const [{ data: customers, error: ce }, { data: visits, error: ve }] = await Promise.all([
+    supabase.from('customers').select('*').eq('user_id', uid),
+    supabase.from('visits').select('*').eq('user_id', uid),
+  ]);
+  if (ce) throw ce; if (ve) throw ve;
+  return {
+    customers: (customers ?? []).map((r) => ({ id: r.id, name: r.name, phoneLast4: r.phone_last4, preferredStyle: r.preferred_style ?? '', notes: r.memo ?? '', revisitDays: r.default_cycle ?? 28, createdAt: r.created_at })),
+    visits: (visits ?? []).map((r) => ({ id: r.id, customerId: r.customer_id, date: r.visit_date, service: r.service ?? '', memo: r.memo ?? '', price: Number(r.service_price ?? r.beauty_sales ?? 0), discount: Number(r.discount ?? 0), productSales: Number(r.retail_sales ?? 0), callbackDone: r.callback_status === '연락완료', createdAt: r.created_at })),
+  };
+}
+
+async function writeCloud(next: AppData, uid: string) {
+  const customers = next.customers.map((c) => ({ id: c.id, user_id: uid, name: c.name, phone_last4: c.phoneLast4, preferred_style: c.preferredStyle || null, memo: c.notes || null, default_cycle: c.revisitDays, created_at: c.createdAt }));
+  const visits = next.visits.map((v) => ({ id: v.id, user_id: uid, customer_id: v.customerId, visit_date: v.date, visit_type: next.visits.filter((x) => x.customerId === v.customerId && x.date <= v.date).length === 1 ? '신규' : '재방문', service: v.service, service_price: v.price, discount: v.discount, beauty_sales: Math.max(v.price - v.discount, 0), retail_sales: v.productSales, callback_cycle: next.customers.find((c) => c.id === v.customerId)?.revisitDays ?? 28, callback_status: v.callbackDone ? '연락완료' : '미연락', next_booking_date: addDays(v.date, next.customers.find((c) => c.id === v.customerId)?.revisitDays ?? 28), memo: v.memo || null, created_at: v.createdAt }));
+  if (customers.length) { const { error } = await supabase.from('customers').upsert(customers, { onConflict: 'id' }); if (error) throw error; }
+  if (visits.length) { const { error } = await supabase.from('visits').upsert(visits, { onConflict: 'id' }); if (error) throw error; }
+  const [{ data: rv }, { data: rc }] = await Promise.all([supabase.from('visits').select('id').eq('user_id', uid), supabase.from('customers').select('id').eq('user_id', uid)]);
+  const vd = (rv ?? []).map((x) => x.id).filter((x) => !next.visits.some((v) => v.id === x));
+  const cd = (rc ?? []).map((x) => x.id).filter((x) => !next.customers.some((c) => c.id === x));
+  if (vd.length) { const { error } = await supabase.from('visits').delete().in('id', vd); if (error) throw error; }
+  if (cd.length) { const { error } = await supabase.from('customers').delete().in('id', cd); if (error) throw error; }
+}
 
 function AppButton({ label, onPress, secondary = false, disabled = false }: { label: string; onPress: () => void; secondary?: boolean; disabled?: boolean }) {
   return (
@@ -72,7 +95,7 @@ function AppButton({ label, onPress, secondary = false, disabled = false }: { la
   );
 }
 
-function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false }: { label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; keyboardType?: 'default' | 'number-pad'; multiline?: boolean }) {
+function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, secureTextEntry = false, autoCapitalize = 'sentences' }: { label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; keyboardType?: 'default' | 'number-pad' | 'email-address'; multiline?: boolean; secureTextEntry?: boolean; autoCapitalize?: 'none' | 'sentences' }) {
   return (
     <View style={styles.fieldWrap}>
       <Text style={styles.label}>{label}</Text>
@@ -83,6 +106,8 @@ function Field({ label, value, onChangeText, placeholder, keyboardType = 'defaul
         placeholderTextColor="#a4a7a3"
         keyboardType={keyboardType}
         multiline={multiline}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
         style={[styles.input, multiline && styles.textarea]}
       />
     </View>
@@ -114,8 +139,12 @@ function Empty({ title, description, actionLabel, onAction }: { title: string; d
 }
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [data, setData] = useState<AppData>({ customers: [], visits: [] });
   const [loaded, setLoaded] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncPending, setSyncPending] = useState(false);
   const [tab, setTab] = useState<Tab>('home');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCustomer, setShowCustomer] = useState(false);
@@ -124,33 +153,72 @@ export default function App() {
   const [locked, setLocked] = useState(false);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: auth }) => { setSession(auth.session); setAuthReady(true); });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => { setSession(next); setAuthReady(true); if (!next) { setData({ customers: [], visits: [] }); setLoaded(false); } });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
     (async () => {
+      setLoaded(false);
       try {
-        const [raw, settings] = await Promise.all([AsyncStorage.getItem(STORAGE_KEY), AsyncStorage.getItem(SETTINGS_KEY)]);
-        if (raw) setData(JSON.parse(raw));
+        const [cached, pending, settings] = await Promise.all([AsyncStorage.getItem(cacheKey(session.user.id)), AsyncStorage.getItem(pendingKey(session.user.id)), AsyncStorage.getItem(SETTINGS_KEY)]);
         if (settings) {
           const parsed = JSON.parse(settings);
           setFaceIdEnabled(Boolean(parsed.faceIdEnabled));
           setLocked(Boolean(parsed.faceIdEnabled));
         }
+        if (pending) {
+          const local = JSON.parse(pending) as AppData;
+          if (active) setData(local);
+          await writeCloud(local, session.user.id);
+          await AsyncStorage.removeItem(pendingKey(session.user.id));
+        } else {
+          const cloud = await readCloud(session.user.id);
+          const initial = cloud.customers.length || cloud.visits.length ? cloud : cached ? JSON.parse(cached) as AppData : { customers: [], visits: [] };
+          if (active) setData(initial);
+          if (!cloud.customers.length && !cloud.visits.length && cached) await writeCloud(initial, session.user.id);
+        }
+        if (active) setSyncPending(false);
       } catch {
-        Alert.alert('데이터를 불러오지 못했어요', '백업 파일이 있다면 설정에서 복원할 수 있어요.');
+        const cached = await AsyncStorage.getItem(cacheKey(session.user.id));
+        if (cached && active) setData(JSON.parse(cached));
+        if (active) setSyncPending(true);
       } finally {
-        setLoaded(true);
+        if (active) setLoaded(true);
       }
     })();
-  }, []);
+    return () => { active = false; };
+  }, [session?.user.id]);
 
-  useEffect(() => {
-    if (loaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data, loaded]);
+  const persist = async (next: AppData) => {
+    if (!session) return;
+    setData(next);
+    await AsyncStorage.setItem(cacheKey(session.user.id), JSON.stringify(next));
+    setSyncing(true);
+    try { await writeCloud(next, session.user.id); await AsyncStorage.removeItem(pendingKey(session.user.id)); setSyncPending(false); }
+    catch { await AsyncStorage.setItem(pendingKey(session.user.id), JSON.stringify(next)); setSyncPending(true); }
+    finally { setSyncing(false); }
+  };
+
+  const refresh = async () => {
+    if (!session) return;
+    setSyncing(true);
+    try { const cloud = await readCloud(session.user.id); setData(cloud); await AsyncStorage.setItem(cacheKey(session.user.id), JSON.stringify(cloud)); setSyncPending(false); }
+    catch { Alert.alert('동기화할 수 없어요', '인터넷 연결을 확인해주세요. 기기에 저장된 기록은 유지됩니다.'); }
+    finally { setSyncing(false); }
+  };
 
   const unlock = async () => {
     const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'MY CLIENT BOOK 잠금 해제', cancelLabel: '취소' });
     if (result.success) setLocked(false);
   };
 
-  if (!loaded) return <SafeAreaView style={styles.center}><Text style={styles.subtitle}>고객 장부를 준비하고 있어요.</Text></SafeAreaView>;
+  if (!authReady) return <SafeAreaView style={styles.center}><Text style={styles.subtitle}>앱을 준비하고 있어요.</Text></SafeAreaView>;
+  if (!session) return <AuthScreen />;
+  if (!loaded) return <SafeAreaView style={styles.center}><Text style={styles.subtitle}>고객 장부를 동기화하고 있어요.</Text></SafeAreaView>;
   if (locked) return (
     <SafeAreaView style={styles.lockScreen}>
       <StatusBar style="dark" />
@@ -162,12 +230,12 @@ export default function App() {
 
   const selected = data.customers.find((c) => c.id === selectedId) ?? null;
   const saveCustomer = (customer: Customer) => {
-    setData((prev) => ({ ...prev, customers: [...prev.customers.filter((c) => c.id !== customer.id), customer] }));
+    void persist({ ...data, customers: [...data.customers.filter((c) => c.id !== customer.id), customer] });
     setSelectedId(customer.id);
     setShowCustomer(false);
   };
   const saveVisit = (visit: Visit) => {
-    setData((prev) => ({ ...prev, visits: [...prev.visits.filter((v) => v.id !== visit.id), visit] }));
+    void persist({ ...data, visits: [...data.visits.filter((v) => v.id !== visit.id), visit] });
     setShowVisit(false);
   };
 
@@ -184,7 +252,7 @@ export default function App() {
             onVisit={() => setShowVisit(true)}
             onDelete={() => Alert.alert('고객을 삭제할까요?', '방문 기록도 함께 삭제되며 복구할 수 없어요.', [
               { text: '취소', style: 'cancel' },
-              { text: '삭제', style: 'destructive', onPress: () => { setData((p) => ({ customers: p.customers.filter((c) => c.id !== selected.id), visits: p.visits.filter((v) => v.customerId !== selected.id) })); setSelectedId(null); } },
+              { text: '삭제', style: 'destructive', onPress: () => { void persist({ customers: data.customers.filter((c) => c.id !== selected.id), visits: data.visits.filter((v) => v.customerId !== selected.id) }); setSelectedId(null); } },
             ])}
           />
         ) : (
@@ -192,9 +260,9 @@ export default function App() {
             <View style={styles.content}>
               {tab === 'home' && <Home data={data} onOpenCustomer={setSelectedId} onAdd={() => setShowCustomer(true)} />}
               {tab === 'customers' && <Customers customers={data.customers} visits={data.visits} onOpen={setSelectedId} onAdd={() => setShowCustomer(true)} />}
-              {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onDone={(visitId) => setData((p) => ({ ...p, visits: p.visits.map((v) => v.id === visitId ? { ...v, callbackDone: true } : v) }))} />}
+              {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onDone={(visitId) => void persist({ ...data, visits: data.visits.map((v) => v.id === visitId ? { ...v, callbackDone: true } : v) })} />}
               {tab === 'stats' && <Stats data={data} />}
-              {tab === 'settings' && <Settings data={data} setData={setData} faceIdEnabled={faceIdEnabled} setFaceIdEnabled={setFaceIdEnabled} />}
+              {tab === 'settings' && <Settings data={data} onChange={persist} faceIdEnabled={faceIdEnabled} setFaceIdEnabled={setFaceIdEnabled} email={session.user.email ?? ''} syncing={syncing} syncPending={syncPending} onRefresh={refresh} />}
             </View>
             <Nav tab={tab} setTab={setTab} />
           </>
@@ -204,6 +272,19 @@ export default function App() {
       {selected && <VisitEditor visible={showVisit} customer={selected} onClose={() => setShowVisit(false)} onSave={saveVisit} />}
     </SafeAreaView>
   );
+}
+
+function AuthScreen() {
+  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [signup, setSignup] = useState(false); const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    if (!email.trim() || password.length < 6) return Alert.alert('확인해주세요', '이메일과 6자리 이상의 비밀번호를 입력해주세요.');
+    setBusy(true);
+    const result = signup ? await supabase.auth.signUp({ email: email.trim(), password }) : await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    setBusy(false);
+    if (result.error) return Alert.alert(signup ? '회원가입할 수 없어요' : '로그인할 수 없어요', result.error.message);
+    if (signup && !result.data.session) Alert.alert('인증 메일을 보냈어요', '이메일 인증을 완료한 뒤 로그인해주세요.');
+  };
+  return <SafeAreaView style={styles.authSafe}><StatusBar style="dark" /><KeyboardAvoidingView style={styles.authWrap} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><Text style={styles.lockLogo}>MY{`\n`}CLIENT{`\n`}BOOK</Text><Text style={styles.authTitle}>{signup ? '새 계정 만들기' : '내 장부 열기'}</Text><Text style={styles.authSub}>같은 계정으로 로그인하면 새 휴대폰에서도 고객 기록을 그대로 불러옵니다.</Text><Field label="이메일" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" /><Field label="비밀번호" value={password} onChangeText={setPassword} placeholder="6자리 이상" secureTextEntry autoCapitalize="none" /><AppButton label={busy ? '처리 중...' : signup ? '회원가입' : '로그인'} onPress={submit} disabled={busy} /><Pressable onPress={() => setSignup((v) => !v)}><Text style={styles.authSwitch}>{signup ? '이미 계정이 있어요 · 로그인' : '처음 사용해요 · 회원가입'}</Text></Pressable></KeyboardAvoidingView></SafeAreaView>;
 }
 
 function Home({ data, onOpenCustomer, onAdd }: { data: AppData; onOpenCustomer: (id: string) => void; onAdd: () => void }) {
@@ -252,7 +333,7 @@ function Customers({ customers, visits, onOpen, onAdd }: { customers: Customer[]
       {filtered.length === 0 ? <Empty title={query ? '검색 결과가 없어요' : '등록된 고객이 없어요'} description={query ? '이름이나 연락처를 다시 확인해주세요.' : '고객을 등록하면 방문 이력을 바로 연결할 수 있어요.'} actionLabel={query ? undefined : '고객 등록'} onAction={query ? undefined : onAdd} /> : (
         <FlatList data={filtered} keyExtractor={(c) => c.id} contentContainerStyle={{ paddingBottom: 30 }} renderItem={({ item }) => {
           const count = visits.filter((v) => v.customerId === item.id).length;
-          return <Pressable onPress={() => onOpen(item.id)} style={styles.customerCard}><Avatar name={item.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{item.name}</Text><Text style={styles.rowSub}>{item.phoneLast4 ? `•••• ${item.phoneLast4}` : '연락처 미입력'} · {item.preferredStyle || item.category}</Text></View><View style={styles.countBadge}><Text style={styles.countText}>{count}회</Text></View></Pressable>;
+          return <Pressable onPress={() => onOpen(item.id)} style={styles.customerCard}><Avatar name={item.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{item.name}</Text><Text style={styles.rowSub}>•••• {item.phoneLast4}{item.preferredStyle ? ` · ${item.preferredStyle}` : ''}</Text></View><View style={styles.countBadge}><Text style={styles.countText}>{count}회</Text></View></Pressable>;
         }} />
       )}
     </View>
@@ -308,7 +389,7 @@ function Stats({ data }: { data: AppData }) {
   );
 }
 
-function Settings({ data, setData, faceIdEnabled, setFaceIdEnabled }: { data: AppData; setData: React.Dispatch<React.SetStateAction<AppData>>; faceIdEnabled: boolean; setFaceIdEnabled: (v: boolean) => void }) {
+function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, syncing, syncPending, onRefresh }: { data: AppData; onChange: (data: AppData) => Promise<void>; faceIdEnabled: boolean; setFaceIdEnabled: (v: boolean) => void; email: string; syncing: boolean; syncPending: boolean; onRefresh: () => Promise<void> }) {
   const toggleFaceId = async (value: boolean) => {
     if (value) {
       const compatible = await LocalAuthentication.hasHardwareAsync();
@@ -327,15 +408,20 @@ function Settings({ data, setData, faceIdEnabled, setFaceIdEnabled }: { data: Ap
       if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'MY CLIENT BOOK 백업 저장' });
     } catch { Alert.alert('백업에 실패했어요', '잠시 후 다시 시도해주세요.'); }
   };
-  const reset = () => Alert.alert('모든 기록을 삭제할까요?', '이 작업은 되돌릴 수 없어요. 먼저 백업하는 것을 권장해요.', [{ text: '취소', style: 'cancel' }, { text: '전체 삭제', style: 'destructive', onPress: () => setData({ customers: [], visits: [] }) }]);
+  const reset = () => Alert.alert('모든 기록을 삭제할까요?', '계정은 유지되고 고객·방문 기록만 삭제됩니다.', [{ text: '취소', style: 'cancel' }, { text: '전체 삭제', style: 'destructive', onPress: () => void onChange({ customers: [], visits: [] }) }]);
+  const deleteAccount = () => Alert.alert('계정과 모든 데이터를 삭제할까요?', '서버와 이 기기의 기록이 모두 삭제되며 복구할 수 없어요.', [{ text: '취소', style: 'cancel' }, { text: '계정 삭제', style: 'destructive', onPress: async () => { const { error } = await supabase.functions.invoke('delete-account', { body: { confirm: true } }); if (error) return Alert.alert('계정을 삭제할 수 없어요', '잠시 후 다시 시도해주세요.'); await supabase.auth.signOut(); } }]);
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
-      <Header title="설정" subtitle="고객 정보는 외부 서버로 전송되지 않아요." />
+      <Header title="설정" subtitle="계정에 안전하게 동기화되어 새 휴대폰에서도 복원됩니다." />
+      <View style={styles.privacyCard}><Text style={styles.privacyTitle}>{email}</Text><Text style={styles.privacyText}>{syncing ? '동기화 중...' : syncPending ? '오프라인 저장됨 · 연결되면 자동 동기화' : '모든 기록 동기화 완료'}</Text></View>
+      <Pressable onPress={() => void onRefresh()} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>지금 동기화</Text><Text style={styles.settingSub}>서버의 최신 기록을 다시 불러옵니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
       <View style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>Face ID 잠금</Text><Text style={styles.settingSub}>앱을 열 때 고객 정보를 보호합니다.</Text></View><Switch value={faceIdEnabled} onValueChange={toggleFaceId} trackColor={{ true: ACCENT }} /></View>
       <Pressable onPress={backup} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>데이터 백업</Text><Text style={styles.settingSub}>고객과 방문 기록을 파일로 안전하게 저장합니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
-      <View style={styles.privacyCard}><Text style={styles.privacyTitle}>로컬 저장 방식</Text><Text style={styles.privacyText}>회원가입 없이 사용할 수 있으며 고객 정보와 시술 기록은 이 기기에만 저장됩니다. 기기를 바꾸거나 앱을 삭제하기 전에 반드시 백업해주세요.</Text></View>
+      <View style={styles.privacyCard}><Text style={styles.privacyTitle}>계정 동기화</Text><Text style={styles.privacyText}>고객과 방문 기록만 저장합니다. 사진, 관리자센터, 인증 코드, 체험판 기능은 사용하지 않습니다.</Text></View>
+      <AppButton label="로그아웃" secondary onPress={() => void supabase.auth.signOut()} />
       <Pressable onPress={reset} style={styles.dangerButton}><Text style={styles.dangerText}>모든 데이터 삭제</Text></Pressable>
-      <Text style={styles.version}>MY CLIENT BOOK 3.0 · HenryLAB</Text>
+      <Pressable onPress={deleteAccount} style={styles.dangerButton}><Text style={styles.dangerText}>계정 삭제</Text></Pressable>
+      <Text style={styles.version}>MY CLIENT BOOK 4.0 · HenryLAB</Text>
     </ScrollView>
   );
 }
@@ -345,30 +431,29 @@ function CustomerDetail({ customer, visits, onBack, onEdit, onVisit, onDelete }:
   return (
     <ScrollView contentContainerStyle={styles.detailScroll}>
       <View style={styles.detailTop}><Pressable onPress={onBack}><Text style={styles.back}>‹</Text></Pressable><Text style={styles.detailTopTitle}>고객 상세</Text><Pressable onPress={onEdit}><Text style={styles.edit}>수정</Text></Pressable></View>
-      <View style={styles.profile}><Avatar name={customer.name} xlarge /><Text style={styles.profileName}>{customer.name}</Text><Text style={styles.profileSub}>{customer.phoneLast4 ? `연락처 •••• ${customer.phoneLast4}` : '연락처 미입력'} · {customer.category}</Text></View>
+      <View style={styles.profile}><Avatar name={customer.name} xlarge /><Text style={styles.profileName}>{customer.name}</Text><Text style={styles.profileSub}>연락처 •••• {customer.phoneLast4}</Text></View>
       <View style={styles.summaryCard}><View><Text style={styles.summaryValue}>{visits.length}</Text><Text style={styles.summaryLabel}>방문</Text></View><View style={styles.divider} /><View><Text style={styles.summaryValue}>{money(total)}</Text><Text style={styles.summaryLabel}>누적 매출</Text></View><View style={styles.divider} /><View><Text style={styles.summaryValue}>{customer.revisitDays}일</Text><Text style={styles.summaryLabel}>재방문</Text></View></View>
       <View style={styles.infoCard}><Info label="선호 스타일" value={customer.preferredStyle || '미입력'} /><Info label="상담 메모" value={customer.notes || '미입력'} /></View>
       <AppButton label="새 방문 기록 추가" onPress={onVisit} />
       <SectionTitle title="방문 타임라인" count={visits.length} />
-      {visits.length === 0 ? <Empty title="방문 기록이 없어요" description="첫 시술 기록을 남겨보세요." /> : visits.map((visit) => <View key={visit.id} style={styles.visitCard}>{visit.photoUri ? <Image source={{ uri: visit.photoUri }} style={styles.visitPhoto} /> : null}<View style={{ flex: 1 }}><Text style={styles.visitDate}>{visit.date}</Text><Text style={styles.visitService}>{visit.service}</Text>{!!visit.memo && <Text style={styles.visitMemo}>{visit.memo}</Text>}<Text style={styles.visitPrice}>{money(visit.price - visit.discount + visit.productSales)}</Text></View></View>)}
+      {visits.length === 0 ? <Empty title="방문 기록이 없어요" description="첫 시술 기록을 남겨보세요." /> : visits.map((visit) => <View key={visit.id} style={styles.visitCard}><View style={{ flex: 1 }}><Text style={styles.visitDate}>{visit.date}</Text><Text style={styles.visitService}>{visit.service}</Text>{!!visit.memo && <Text style={styles.visitMemo}>{visit.memo}</Text>}<Text style={styles.visitPrice}>{money(visit.price - visit.discount + visit.productSales)}</Text></View></View>)}
       <Pressable onPress={onDelete} style={styles.dangerButton}><Text style={styles.dangerText}>고객 삭제</Text></Pressable>
     </ScrollView>
   );
 }
 
 function CustomerEditor({ visible, initial, onClose, onSave }: { visible: boolean; initial: Customer | null; onClose: () => void; onSave: (c: Customer) => void }) {
-  const [name, setName] = useState(''); const [phone, setPhone] = useState(''); const [category, setCategory] = useState<Category>('남성'); const [style, setStyle] = useState(''); const [notes, setNotes] = useState(''); const [days, setDays] = useState('28');
-  useEffect(() => { if (visible) { setName(initial?.name ?? ''); setPhone(initial?.phoneLast4 ?? ''); setCategory(initial?.category ?? '남성'); setStyle(initial?.preferredStyle ?? ''); setNotes(initial?.notes ?? ''); setDays(String(initial?.revisitDays ?? 28)); } }, [visible, initial]);
-  const submit = () => { if (!name.trim()) return Alert.alert('고객 이름을 입력해주세요.'); onSave({ id: initial?.id ?? id(), name: name.trim(), phoneLast4: phone.replace(/[^0-9]/g, '').slice(-4), category, preferredStyle: style.trim(), notes: notes.trim(), revisitDays: Math.max(1, Number(days) || 28), createdAt: initial?.createdAt ?? new Date().toISOString() }); };
-  return <EditorShell visible={visible} title={initial ? '고객 정보 수정' : '새 고객 등록'} onClose={onClose}><Field label="고객 이름 *" value={name} onChangeText={setName} placeholder="이름 또는 활동명" /><Field label="연락처 뒤 4자리" value={phone} onChangeText={setPhone} placeholder="0000" keyboardType="number-pad" /><Text style={styles.label}>구분</Text><View style={styles.segment}>{(['남성', '여성', '기타'] as Category[]).map((x) => <Pressable key={x} onPress={() => setCategory(x)} style={[styles.segmentItem, category === x && styles.segmentActive]}><Text style={[styles.segmentText, category === x && styles.segmentTextActive]}>{x}</Text></Pressable>)}</View><Field label="선호 스타일" value={style} onChangeText={setStyle} placeholder="예: 슬릭컷, 하이레이어드" /><Field label="재방문 주기" value={days} onChangeText={setDays} placeholder="28" keyboardType="number-pad" /><Field label="상담 및 특이사항" value={notes} onChangeText={setNotes} placeholder="모질, 두피 상태, 선호도 등을 기록하세요." multiline /><AppButton label={initial ? '수정 완료' : '고객 등록'} onPress={submit} /></EditorShell>;
+  const [name, setName] = useState(''); const [phone, setPhone] = useState(''); const [style, setStyle] = useState(''); const [notes, setNotes] = useState(''); const [days, setDays] = useState('28');
+  useEffect(() => { if (visible) { setName(initial?.name ?? ''); setPhone(initial?.phoneLast4 ?? ''); setStyle(initial?.preferredStyle ?? ''); setNotes(initial?.notes ?? ''); setDays(String(initial?.revisitDays ?? 28)); } }, [visible, initial]);
+  const submit = () => { const digits = phone.replace(/[^0-9]/g, ''); if (!name.trim()) return Alert.alert('고객 이름을 입력해주세요.'); if (digits.length !== 4) return Alert.alert('연락처 뒤 4자리를 입력해주세요.'); onSave({ id: initial?.id ?? uuid(), name: name.trim(), phoneLast4: digits, preferredStyle: style.trim(), notes: notes.trim(), revisitDays: Math.max(1, Number(days) || 28), createdAt: initial?.createdAt ?? new Date().toISOString() }); };
+  return <EditorShell visible={visible} title={initial ? '고객 정보 수정' : '새 고객 등록'} onClose={onClose}><Field label="고객 이름 *" value={name} onChangeText={setName} placeholder="이름 또는 활동명" /><Field label="연락처 뒤 4자리 *" value={phone} onChangeText={(v) => setPhone(v.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="0000" keyboardType="number-pad" /><Field label="선호 스타일" value={style} onChangeText={setStyle} placeholder="예: 슬릭컷, 하이레이어드" /><Field label="재방문 주기" value={days} onChangeText={setDays} placeholder="28" keyboardType="number-pad" /><Field label="상담 및 특이사항" value={notes} onChangeText={setNotes} placeholder="모질, 두피 상태, 선호도 등을 기록하세요." multiline /><AppButton label={initial ? '수정 완료' : '고객 등록'} onPress={submit} /></EditorShell>;
 }
 
 function VisitEditor({ visible, customer, onClose, onSave }: { visible: boolean; customer: Customer; onClose: () => void; onSave: (v: Visit) => void }) {
-  const [date, setDate] = useState(todayIso()); const [service, setService] = useState(''); const [memo, setMemo] = useState(''); const [price, setPrice] = useState(''); const [discount, setDiscount] = useState(''); const [product, setProduct] = useState(''); const [photoUri, setPhotoUri] = useState<string | undefined>();
-  useEffect(() => { if (visible) { setDate(todayIso()); setService(''); setMemo(''); setPrice(''); setDiscount(''); setProduct(''); setPhotoUri(undefined); } }, [visible]);
-  const choosePhoto = () => Alert.alert('시술 사진 추가', '사진을 가져올 방법을 선택해주세요.', [{ text: '카메라', onPress: async () => { const r = await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true }); if (!r.canceled) setPhotoUri(r.assets[0].uri); } }, { text: '보관함', onPress: async () => { const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true }); if (!r.canceled) setPhotoUri(r.assets[0].uri); } }, { text: '취소', style: 'cancel' }]);
-  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); onSave({ id: id(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), discount: parseMoney(discount), productSales: parseMoney(product), photoUri }); };
-  return <EditorShell visible={visible} title={`${customer.name} 방문 기록`} onClose={onClose}><Field label="방문일 *" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" /><Field label="시술명 *" value={service} onChangeText={setService} placeholder="예: 디자인컷 + 다운펌" /><View style={styles.moneyRow}><View style={{ flex: 1 }}><Field label="시술 금액" value={price} onChangeText={setPrice} placeholder="0" keyboardType="number-pad" /></View><View style={{ flex: 1 }}><Field label="할인" value={discount} onChangeText={setDiscount} placeholder="0" keyboardType="number-pad" /></View></View><Field label="제품 판매" value={product} onChangeText={setProduct} placeholder="0" keyboardType="number-pad" /><Field label="시술 메모" value={memo} onChangeText={setMemo} placeholder="약제, 배합, 디자인 포인트 등을 기록하세요." multiline /><Pressable onPress={choosePhoto} style={styles.photoPicker}>{photoUri ? <Image source={{ uri: photoUri }} style={styles.photoPreview} /> : <><Text style={styles.photoPlus}>＋</Text><Text style={styles.photoText}>시술 사진 추가</Text></>}</Pressable><AppButton label="방문 기록 저장" onPress={submit} /></EditorShell>;
+  const [date, setDate] = useState(todayIso()); const [service, setService] = useState(''); const [memo, setMemo] = useState(''); const [price, setPrice] = useState(''); const [discount, setDiscount] = useState(''); const [product, setProduct] = useState('');
+  useEffect(() => { if (visible) { setDate(todayIso()); setService(''); setMemo(''); setPrice(''); setDiscount(''); setProduct(''); } }, [visible]);
+  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); onSave({ id: uuid(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), discount: parseMoney(discount), productSales: parseMoney(product), createdAt: new Date().toISOString() }); };
+  return <EditorShell visible={visible} title={`${customer.name} 방문 기록`} onClose={onClose}><Field label="방문일 *" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" /><Field label="시술명 *" value={service} onChangeText={setService} placeholder="예: 디자인컷 + 다운펌" /><View style={styles.moneyRow}><View style={{ flex: 1 }}><Field label="시술 금액" value={price} onChangeText={setPrice} placeholder="0" keyboardType="number-pad" /></View><View style={{ flex: 1 }}><Field label="할인" value={discount} onChangeText={setDiscount} placeholder="0" keyboardType="number-pad" /></View></View><Field label="제품 판매" value={product} onChangeText={setProduct} placeholder="0" keyboardType="number-pad" /><Field label="시술 메모" value={memo} onChangeText={setMemo} placeholder="약제, 배합, 디자인 포인트 등을 기록하세요." multiline /><AppButton label="방문 기록 저장" onPress={submit} /></EditorShell>;
 }
 
 function EditorShell({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
@@ -387,6 +472,7 @@ function Info({ label, value }: { label: string; value: string }) { return <View
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG }, app: { flex: 1 }, content: { flex: 1 }, screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 }, scroll: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 36 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BG },
+  authSafe: { flex: 1, backgroundColor: BG }, authWrap: { flex: 1, justifyContent: 'center', padding: 30 }, authTitle: { fontSize: 27, fontWeight: '900', color: '#171a17', marginTop: 30, marginBottom: 7 }, authSub: { color: '#717772', lineHeight: 21, marginBottom: 28 }, authSwitch: { textAlign: 'center', color: ACCENT, fontWeight: '800', paddingVertical: 18 },
   header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 22 }, eyebrow: { color: ACCENT, fontSize: 12, fontWeight: '800', letterSpacing: 2.2, marginBottom: 6 }, title: { color: '#151815', fontSize: 31, fontWeight: '800', letterSpacing: -1 }, subtitle: { color: '#747a75', fontSize: 14, lineHeight: 21, marginTop: 7 },
   circleButton: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e0e3de' }, circleButtonText: { fontSize: 28, color: ACCENT, fontWeight: '300', marginTop: -2 },
   heroCard: { backgroundColor: '#173f36', borderRadius: 25, padding: 24, marginBottom: 26 }, heroLabel: { color: '#b9d1ca', fontSize: 13, fontWeight: '700' }, heroValue: { color: '#fff', fontSize: 34, fontWeight: '800', marginTop: 8, letterSpacing: -1 }, heroRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 26, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#57766e' }, heroMiniValue: { color: '#fff', fontSize: 18, fontWeight: '800' }, heroMiniLabel: { color: '#a8c0ba', fontSize: 12, marginTop: 4 },
@@ -400,7 +486,7 @@ const styles = StyleSheet.create({
   settingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 19, padding: 18, marginBottom: 10, borderWidth: 1, borderColor: '#e4e7e2' }, settingTitle: { color: '#1c1f1c', fontSize: 16, fontWeight: '800' }, settingSub: { color: '#7d827e', fontSize: 12, marginTop: 5, lineHeight: 17 }, chevron: { color: '#8b908c', fontSize: 28 }, privacyCard: { backgroundColor: '#e5eee9', borderRadius: 20, padding: 19, marginVertical: 12 }, privacyTitle: { color: '#244a40', fontWeight: '900', fontSize: 15 }, privacyText: { color: '#587067', lineHeight: 20, fontSize: 13, marginTop: 8 }, dangerButton: { paddingVertical: 17, alignItems: 'center', marginTop: 20 }, dangerText: { color: '#bc554c', fontSize: 14, fontWeight: '800' }, version: { textAlign: 'center', color: '#a1a5a1', fontSize: 11, marginTop: 20 },
   nav: { height: 76, backgroundColor: '#fff', flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#d9dcd8', paddingBottom: 6 }, navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' }, navIcon: { color: '#9a9e9a', fontSize: 19, fontWeight: '700', height: 25 }, navLabel: { color: '#929792', fontSize: 10, fontWeight: '700', marginTop: 3 }, navActive: { color: ACCENT },
   detailScroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 }, detailTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 54 }, back: { fontSize: 40, color: '#242824', fontWeight: '300' }, detailTopTitle: { fontSize: 16, fontWeight: '800', color: '#1c1f1c' }, edit: { color: ACCENT, fontWeight: '800', fontSize: 15 }, profile: { alignItems: 'center', paddingVertical: 22 }, profileName: { fontSize: 27, fontWeight: '900', color: '#171a17', marginTop: 13 }, profileSub: { color: '#7b807b', marginTop: 6 }, summaryCard: { backgroundColor: '#173f36', borderRadius: 22, paddingVertical: 19, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 12 }, summaryValue: { color: '#fff', fontSize: 17, fontWeight: '900', textAlign: 'center' }, summaryLabel: { color: '#a9c0ba', fontSize: 11, marginTop: 5, textAlign: 'center' }, divider: { width: StyleSheet.hairlineWidth, height: 35, backgroundColor: '#719087' }, infoCard: { backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 18, marginBottom: 12, borderWidth: 1, borderColor: '#e3e6e2' }, infoRow: { paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e4e6e3' }, infoLabel: { color: '#878c87', fontSize: 12, marginBottom: 6 }, infoValue: { color: '#252925', fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  visitCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 20, padding: 14, marginBottom: 11, borderWidth: 1, borderColor: '#e2e5e1' }, visitPhoto: { width: 92, height: 92, borderRadius: 14, marginRight: 14, backgroundColor: '#e8eae7' }, visitDate: { color: ACCENT, fontSize: 11, fontWeight: '800' }, visitService: { color: '#1e211e', fontSize: 16, fontWeight: '900', marginTop: 5 }, visitMemo: { color: '#777c78', fontSize: 12, lineHeight: 17, marginTop: 5 }, visitPrice: { color: '#333833', fontWeight: '800', fontSize: 13, marginTop: 7 },
-  modalSafe: { flex: 1, backgroundColor: BG }, modalTop: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d8dbd7' }, modalClose: { color: ACCENT, fontSize: 15, fontWeight: '700' }, modalTitle: { fontSize: 17, fontWeight: '900', color: '#1c1f1c' }, modalContent: { padding: 20, paddingBottom: 50 }, fieldWrap: { marginBottom: 17 }, label: { color: '#343834', fontSize: 13, fontWeight: '800', marginBottom: 8 }, input: { backgroundColor: '#fff', minHeight: 53, borderRadius: 16, borderWidth: 1, borderColor: '#dfe2de', paddingHorizontal: 15, fontSize: 16, color: '#202420' }, textarea: { minHeight: 104, paddingTop: 14, textAlignVertical: 'top' }, segment: { flexDirection: 'row', backgroundColor: '#e7e9e6', borderRadius: 15, padding: 4, marginBottom: 17 }, segmentItem: { flex: 1, minHeight: 43, alignItems: 'center', justifyContent: 'center', borderRadius: 12 }, segmentActive: { backgroundColor: '#fff' }, segmentText: { color: '#787d78', fontWeight: '700' }, segmentTextActive: { color: ACCENT, fontWeight: '900' }, moneyRow: { flexDirection: 'row', gap: 10 }, photoPicker: { minHeight: 130, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#aab9b2', borderRadius: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 18, backgroundColor: '#edf2ef' }, photoPlus: { fontSize: 34, color: ACCENT, fontWeight: '200' }, photoText: { color: ACCENT, fontWeight: '800', marginTop: 5 }, photoPreview: { width: '100%', height: 190 },
+  visitCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 20, padding: 14, marginBottom: 11, borderWidth: 1, borderColor: '#e2e5e1' }, visitDate: { color: ACCENT, fontSize: 11, fontWeight: '800' }, visitService: { color: '#1e211e', fontSize: 16, fontWeight: '900', marginTop: 5 }, visitMemo: { color: '#777c78', fontSize: 12, lineHeight: 17, marginTop: 5 }, visitPrice: { color: '#333833', fontWeight: '800', fontSize: 13, marginTop: 7 },
+  modalSafe: { flex: 1, backgroundColor: BG }, modalTop: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d8dbd7' }, modalClose: { color: ACCENT, fontSize: 15, fontWeight: '700' }, modalTitle: { fontSize: 17, fontWeight: '900', color: '#1c1f1c' }, modalContent: { padding: 20, paddingBottom: 50 }, fieldWrap: { marginBottom: 17 }, label: { color: '#343834', fontSize: 13, fontWeight: '800', marginBottom: 8 }, input: { backgroundColor: '#fff', minHeight: 53, borderRadius: 16, borderWidth: 1, borderColor: '#dfe2de', paddingHorizontal: 15, fontSize: 16, color: '#202420' }, textarea: { minHeight: 104, paddingTop: 14, textAlignVertical: 'top' }, moneyRow: { flexDirection: 'row', gap: 10 },
   lockScreen: { flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center', padding: 30 }, lockLogo: { color: '#173f36', fontSize: 44, lineHeight: 43, letterSpacing: -2, fontWeight: '900', textAlign: 'center' }, lockText: { color: '#737973', marginTop: 24, marginBottom: 20 },
 });
