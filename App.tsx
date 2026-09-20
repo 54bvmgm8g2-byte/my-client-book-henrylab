@@ -233,12 +233,16 @@ export default function App() {
 
   useEffect(() => {
     const handleUrl = async (url: string) => {
+      const isPasswordReset = url.startsWith('myclientbook://reset-password');
       const params = new URLSearchParams(url.split('#')[1] ?? url.split('?')[1] ?? '');
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
       if (accessToken && refreshToken) {
         const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-        if (!error) setPasswordRecovery(true);
+        if (!error) {
+          setPasswordRecovery(isPasswordReset);
+          if (!isPasswordReset) Alert.alert('이메일 인증 완료', '이제 앱을 바로 사용할 수 있어요.');
+        }
       }
     };
     void Linking.getInitialURL().then((url) => { if (url) void handleUrl(url); });
@@ -374,7 +378,9 @@ function AuthScreen() {
   const submit = async () => {
     if (!email.trim() || password.length < 6) return Alert.alert('확인해주세요', '이메일과 6자리 이상의 비밀번호를 입력해주세요.');
     setBusy(true);
-    const result = signup ? await supabase.auth.signUp({ email: email.trim(), password }) : await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const result = signup
+      ? await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: 'myclientbook://verified' } })
+      : await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
     if (result.error) return Alert.alert(signup ? '회원가입할 수 없어요' : '로그인할 수 없어요', signup ? '이미 가입한 이메일일 수 있어요. 로그인하거나 비밀번호를 재설정해주세요.' : '이메일 또는 비밀번호를 확인해주세요.');
     if (signup && result.data.user?.identities?.length === 0) return Alert.alert('이미 가입한 이메일일 수 있어요', '로그인하거나 비밀번호 재설정을 이용해주세요.');
