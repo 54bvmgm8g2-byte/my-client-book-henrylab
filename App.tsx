@@ -44,14 +44,21 @@ type Visit = {
   callbackDone?: boolean;
   createdAt: string;
 };
-type AppData = { customers: Customer[]; visits: Visit[] };
+type DailyNote = {
+  id: string;
+  date: string;
+  memo: string;
+  createdAt: string;
+};
+type AppData = { customers: Customer[]; visits: Visit[]; dailyNotes: DailyNote[] };
 type Tab = 'home' | 'customers' | 'calendar' | 'callbacks' | 'stats' | 'settings';
 
 const SETTINGS_KEY = 'my-client-book-v3-settings';
 const ACCENT = '#1f6f5c';
 const BG = '#f4f5f2';
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const dateToIso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const todayIso = () => dateToIso(new Date());
 const money = (value: number) => `${Math.round(value).toLocaleString('ko-KR')}원`;
 const parseMoney = (value: string) => Number(value.replace(/[^0-9]/g, '')) || 0;
 const monthKey = (iso = todayIso()) => iso.slice(0, 7);
@@ -81,31 +88,41 @@ function migrateLegacy(raw: string): AppData {
     if (!customerId) return [];
     return [{ id: uuid(), customerId, date: v.date ?? todayIso(), service: v.service ?? '', memo: v.memo ?? '', price: Math.max((v.price ?? 0) - (v.discount ?? 0), 0), productSales: v.productSales ?? 0, visitType: '재방문' as const, nextVisitDate: undefined, callbackDone: v.callbackDone ?? false, createdAt: new Date().toISOString() }];
   });
-  return { customers, visits };
+  return { customers, visits, dailyNotes: [] };
+}
+
+function normalizeData(value?: Partial<AppData> | null): AppData {
+  return { customers: value?.customers ?? [], visits: value?.visits ?? [], dailyNotes: value?.dailyNotes ?? [] };
 }
 
 async function readCloud(uid: string): Promise<AppData> {
-  const [{ data: customers, error: ce }, { data: visits, error: ve }] = await Promise.all([
+  const [{ data: customers, error: ce }, { data: visits, error: ve }, { data: notes, error: ne }] = await Promise.all([
     supabase.from('customers').select('*').eq('user_id', uid),
     supabase.from('visits').select('*').eq('user_id', uid),
+    supabase.from('daily_notes').select('*').eq('user_id', uid),
   ]);
-  if (ce) throw ce; if (ve) throw ve;
+  if (ce) throw ce; if (ve) throw ve; if (ne) throw ne;
   return {
     customers: (customers ?? []).map((r) => ({ id: r.id, name: r.name, phone: phoneDigits(r.phone_last4 ?? ''), preferredStyle: r.preferred_style ?? '', notes: r.memo ?? '', createdAt: r.created_at })),
     visits: (visits ?? []).map((r) => ({ id: r.id, customerId: r.customer_id, date: r.visit_date, service: r.service ?? '', memo: r.memo ?? '', price: Number(r.beauty_sales ?? r.service_price ?? 0), productSales: Number(r.retail_sales ?? 0), visitType: r.visit_type === '신규' ? '신규' : '재방문', nextVisitDate: r.next_booking_date ?? undefined, callbackDone: r.callback_status === '연락완료', createdAt: r.created_at })),
+    dailyNotes: (notes ?? []).map((r) => ({ id: r.id, date: r.note_date, memo: r.memo ?? '', createdAt: r.created_at })),
   };
 }
 
 async function writeCloud(next: AppData, uid: string) {
-  const customers = next.customers.map((c) => ({ id: c.id, user_id: uid, name: c.name, phone_last4: c.phone, preferred_style: c.preferredStyle || null, memo: c.notes || null, default_cycle: 0, created_at: c.createdAt }));
-  const visits = next.visits.map((v) => ({ id: v.id, user_id: uid, customer_id: v.customerId, visit_date: v.date, visit_type: v.visitType, service: v.service, service_price: v.price, discount: 0, beauty_sales: v.price, retail_sales: v.productSales, callback_cycle: 0, callback_status: v.callbackDone ? '연락완료' : '미연락', next_booking_date: v.nextVisitDate || null, memo: v.memo || null, created_at: v.createdAt }));
+  const customers = next.customers.map((c) => ({ id: c.id, user_id: uid, name: c.name, phone_last4: c.phone, preferred_style: c.preferredStyle || null, memo: c.notes || null, default_cycle: 35, created_at: c.createdAt }));
+  const visits = next.visits.map((v) => ({ id: v.id, user_id: uid, customer_id: v.customerId, visit_date: v.date, visit_type: v.visitType, service: v.service, service_price: v.price, discount: 0, beauty_sales: v.price, retail_sales: v.productSales, callback_cycle: 35, callback_status: v.callbackDone ? '연락완료' : '미연락', next_booking_date: v.nextVisitDate || null, memo: v.memo || null, created_at: v.createdAt }));
+  const notes = next.dailyNotes.map((n) => ({ id: n.id, user_id: uid, note_date: n.date, memo: n.memo, created_at: n.createdAt }));
   if (customers.length) { const { error } = await supabase.from('customers').upsert(customers, { onConflict: 'id' }); if (error) throw error; }
   if (visits.length) { const { error } = await supabase.from('visits').upsert(visits, { onConflict: 'id' }); if (error) throw error; }
-  const [{ data: rv }, { data: rc }] = await Promise.all([supabase.from('visits').select('id').eq('user_id', uid), supabase.from('customers').select('id').eq('user_id', uid)]);
+  if (notes.length) { const { error } = await supabase.from('daily_notes').upsert(notes, { onConflict: 'id' }); if (error) throw error; }
+  const [{ data: rv }, { data: rc }, { data: rn }] = await Promise.all([supabase.from('visits').select('id').eq('user_id', uid), supabase.from('customers').select('id').eq('user_id', uid), supabase.from('daily_notes').select('id').eq('user_id', uid)]);
   const vd = (rv ?? []).map((x) => x.id).filter((x) => !next.visits.some((v) => v.id === x));
   const cd = (rc ?? []).map((x) => x.id).filter((x) => !next.customers.some((c) => c.id === x));
+  const nd = (rn ?? []).map((x) => x.id).filter((x) => !next.dailyNotes.some((n) => n.id === x));
   if (vd.length) { const { error } = await supabase.from('visits').delete().in('id', vd); if (error) throw error; }
   if (cd.length) { const { error } = await supabase.from('customers').delete().in('id', cd); if (error) throw error; }
+  if (nd.length) { const { error } = await supabase.from('daily_notes').delete().in('id', nd); if (error) throw error; }
 }
 
 function AppButton({ label, onPress, secondary = false, disabled = false }: { label: string; onPress: () => void; secondary?: boolean; disabled?: boolean }) {
@@ -135,6 +152,39 @@ function Field({ label, value, onChangeText, placeholder, keyboardType = 'defaul
   );
 }
 
+function DateField({ label, value, onChange, optional = false }: { label: string; value: string; onChange: (value: string) => void; optional?: boolean }) {
+  const [open, setOpen] = useState(false);
+  return <View style={styles.fieldWrap}>
+    <Text style={styles.label}>{label}</Text>
+    <Pressable onPress={() => setOpen(true)} style={styles.dateField}>
+      <Text style={[styles.dateFieldText, !value && styles.dateFieldPlaceholder]}>{value ? `${value.replaceAll('-', '. ')}.` : '날짜를 선택해주세요.'}</Text>
+      <Text style={styles.dateFieldIcon}>▣</Text>
+    </Pressable>
+    <DatePickerSheet visible={open} value={value} optional={optional} onClose={() => setOpen(false)} onSelect={(next) => { onChange(next); setOpen(false); }} />
+  </View>;
+}
+
+function DatePickerSheet({ visible, value, optional, onClose, onSelect }: { visible: boolean; value: string; optional: boolean; onClose: () => void; onSelect: (value: string) => void }) {
+  const [visibleMonth, setVisibleMonth] = useState(monthKey(value || todayIso()));
+  useEffect(() => { if (visible) setVisibleMonth(monthKey(value || todayIso())); }, [visible, value]);
+  const [year, month] = visibleMonth.split('-').map(Number);
+  const first = new Date(year, month - 1, 1, 12);
+  const gridStart = new Date(first); gridStart.setDate(1 - first.getDay());
+  const days = Array.from({ length: 42 }, (_, index) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + index); return dateToIso(d); });
+  const shift = (amount: number) => setVisibleMonth(dateToIso(new Date(year, month - 1 + amount, 1, 12)).slice(0, 7));
+  return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Pressable style={styles.pickerBackdrop} onPress={onClose}>
+      <Pressable style={styles.datePickerPanel} onPress={() => {}}>
+        <View style={styles.datePickerTop}><Text style={styles.datePickerTitle}>날짜 선택</Text><Pressable onPress={onClose} hitSlop={12}><Text style={styles.datePickerClose}>×</Text></Pressable></View>
+        <View style={styles.datePickerMonth}><Pressable onPress={() => shift(-1)} style={styles.monthArrow}><Text style={styles.monthArrowText}>‹</Text></Pressable><Text style={styles.monthPickerValue}>{year}년 {month}월</Text><Pressable onPress={() => shift(1)} style={styles.monthArrow}><Text style={styles.monthArrowText}>›</Text></Pressable></View>
+        <View style={styles.weekRow}>{['일','월','화','수','목','금','토'].map((label, index) => <Text key={label} style={[styles.weekLabel, index === 0 && styles.sunday]}>{label}</Text>)}</View>
+        <View style={styles.calendarGrid}>{days.map((day) => { const active = day === value; const inMonth = monthKey(day) === visibleMonth; return <Pressable key={day} onPress={() => onSelect(day)} style={[styles.datePickerDay, active && styles.dayCellActive]}><Text style={[styles.dayText, !inMonth && styles.dayMuted, active && styles.dayTextActive]}>{Number(day.slice(8))}</Text></Pressable>; })}</View>
+        <View style={styles.datePickerActions}><AppButton label="오늘" secondary onPress={() => onSelect(todayIso())} />{optional && <AppButton label="날짜 지우기" secondary onPress={() => onSelect('')} />}</View>
+      </Pressable>
+    </Pressable>
+  </Modal>;
+}
+
 function Header({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
     <View style={styles.header}>
@@ -161,7 +211,7 @@ function Empty({ title, description, actionLabel, onAction }: { title: string; d
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [data, setData] = useState<AppData>({ customers: [], visits: [] });
+  const [data, setData] = useState<AppData>({ customers: [], visits: [], dailyNotes: [] });
   const [loaded, setLoaded] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncPending, setSyncPending] = useState(false);
@@ -177,7 +227,7 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: auth }) => { setSession(auth.session); setAuthReady(true); });
-    const { data: listener } = supabase.auth.onAuthStateChange((event, next) => { setSession(next); setAuthReady(true); if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true); if (!next) { setData({ customers: [], visits: [] }); setLoaded(false); } });
+    const { data: listener } = supabase.auth.onAuthStateChange((event, next) => { setSession(next); setAuthReady(true); if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true); if (!next) { setData({ customers: [], visits: [], dailyNotes: [] }); setLoaded(false); } });
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -209,15 +259,15 @@ export default function App() {
           setLocked(Boolean(parsed.faceIdEnabled));
         }
         if (pending) {
-          const local = JSON.parse(pending) as AppData;
+          const local = normalizeData(JSON.parse(pending));
           if (active) setData(local);
           await writeCloud(local, session.user.id);
           await AsyncStorage.removeItem(pendingKey(session.user.id));
         } else {
           const cloud = await readCloud(session.user.id);
-          const initial = cloud.customers.length || cloud.visits.length ? cloud : cached ? JSON.parse(cached) as AppData : legacy ? migrateLegacy(legacy) : { customers: [], visits: [] };
+          const initial = cloud.customers.length || cloud.visits.length || cloud.dailyNotes.length ? cloud : cached ? normalizeData(JSON.parse(cached)) : legacy ? migrateLegacy(legacy) : { customers: [], visits: [], dailyNotes: [] };
           if (active) setData(initial);
-          if (!cloud.customers.length && !cloud.visits.length && (cached || legacy)) {
+          if (!cloud.customers.length && !cloud.visits.length && !cloud.dailyNotes.length && (cached || legacy)) {
             await writeCloud(initial, session.user.id);
             await AsyncStorage.setItem(cacheKey(session.user.id), JSON.stringify(initial));
             if (legacy) await AsyncStorage.removeItem(LEGACY_KEY);
@@ -226,7 +276,7 @@ export default function App() {
         if (active) setSyncPending(false);
       } catch {
         const cached = await AsyncStorage.getItem(cacheKey(session.user.id));
-        if (cached && active) setData(JSON.parse(cached));
+        if (cached && active) setData(normalizeData(JSON.parse(cached)));
         if (active) setSyncPending(true);
       } finally {
         if (active) setLoaded(true);
@@ -295,7 +345,7 @@ export default function App() {
             onVisit={() => { setVisitInitialDate(todayIso()); setShowVisit(true); }}
             onDelete={() => Alert.alert('고객을 삭제할까요?', '방문 기록도 함께 삭제되며 복구할 수 없어요.', [
               { text: '취소', style: 'cancel' },
-              { text: '삭제', style: 'destructive', onPress: () => { void persist({ customers: data.customers.filter((c) => c.id !== selected.id), visits: data.visits.filter((v) => v.customerId !== selected.id) }); setSelectedId(null); } },
+              { text: '삭제', style: 'destructive', onPress: () => { void persist({ ...data, customers: data.customers.filter((c) => c.id !== selected.id), visits: data.visits.filter((v) => v.customerId !== selected.id) }); setSelectedId(null); } },
             ])}
           />
         ) : (
@@ -304,7 +354,7 @@ export default function App() {
             <View style={styles.content}>
               {tab === 'home' && <Home data={data} onOpenCustomer={setSelectedId} onAdd={() => setShowCustomer(true)} />}
               {tab === 'customers' && <Customers customers={data.customers} visits={data.visits} onOpen={setSelectedId} onAdd={() => setShowCustomer(true)} />}
-              {tab === 'calendar' && <CalendarScreen data={data} onOpen={setSelectedId} onAddVisit={(customerId, date) => { setSelectedId(customerId); setVisitInitialDate(date); setShowVisit(true); }} />}
+              {tab === 'calendar' && <CalendarScreen data={data} onOpen={setSelectedId} onAddVisit={(customerId, date) => { setSelectedId(customerId); setVisitInitialDate(date); setShowVisit(true); }} onSaveNote={(note) => void persist({ ...data, dailyNotes: [...data.dailyNotes.filter((n) => n.id !== note.id), note] })} onDeleteNote={(noteId) => void persist({ ...data, dailyNotes: data.dailyNotes.filter((n) => n.id !== noteId) })} />}
               {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onDone={(visitId) => void persist({ ...data, visits: data.visits.map((v) => v.id === visitId ? { ...v, callbackDone: true } : v) })} />}
               {tab === 'stats' && <Stats data={data} />}
               {tab === 'settings' && <Settings data={data} onChange={persist} faceIdEnabled={faceIdEnabled} setFaceIdEnabled={setFaceIdEnabled} email={session.user.email ?? ''} syncing={syncing} syncPending={syncPending} onRefresh={refresh} />}
@@ -403,46 +453,54 @@ function Customers({ customers, visits, onOpen, onAdd }: { customers: Customer[]
   );
 }
 
-function CalendarScreen({ data, onOpen, onAddVisit }: { data: AppData; onOpen: (id: string) => void; onAddVisit: (id: string, date: string) => void }) {
+function CalendarScreen({ data, onOpen, onAddVisit, onSaveNote, onDeleteNote }: { data: AppData; onOpen: (id: string) => void; onAddVisit: (id: string, date: string) => void; onSaveNote: (note: DailyNote) => void; onDeleteNote: (id: string) => void }) {
   const [selectedMonth, setSelectedMonth] = useState(monthKey());
   const [selectedDate, setSelectedDate] = useState(todayIso());
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [editingNote, setEditingNote] = useState<DailyNote | null>(null);
   const [year, month] = selectedMonth.split('-').map(Number);
   const first = new Date(year, month - 1, 1, 12);
   const gridStart = new Date(first); gridStart.setDate(1 - first.getDay());
-  const days = Array.from({ length: 42 }, (_, index) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + index); return d.toISOString().slice(0, 10); });
-  const shift = (amount: number) => { const d = new Date(year, month - 1 + amount, 1, 12); const next = d.toISOString().slice(0, 7); setSelectedMonth(next); setSelectedDate(`${next}-01`); };
+  const days = Array.from({ length: 42 }, (_, index) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + index); return dateToIso(d); });
+  const shift = (amount: number) => { const next = dateToIso(new Date(year, month - 1 + amount, 1, 12)).slice(0, 7); setSelectedMonth(next); setSelectedDate(`${next}-01`); };
   const monthVisits = data.visits.filter((v) => monthKey(v.date) === selectedMonth);
   const selectedVisits = data.visits.filter((v) => v.date === selectedDate).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const selectedNotes = data.dailyNotes.filter((n) => n.date === selectedDate).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const openNote = (note?: DailyNote) => { setEditingNote(note ?? null); setNoteText(note?.memo ?? ''); setNoteOpen(true); };
+  const saveNote = () => { if (!noteText.trim()) return Alert.alert('메모 내용을 입력해주세요.'); onSaveNote({ id: editingNote?.id ?? uuid(), date: selectedDate, memo: noteText.trim(), createdAt: editingNote?.createdAt ?? new Date().toISOString() }); setNoteOpen(false); };
   const serviceSales = monthVisits.reduce((sum, v) => sum + v.price, 0); const productSales = monthVisits.reduce((sum, v) => sum + v.productSales, 0);
   return <ScrollView contentContainerStyle={styles.scroll}>
     <Header title="캘린더" subtitle="날짜별 방문과 매출을 한눈에 확인하세요." />
     <View style={styles.monthPicker}><Pressable onPress={() => shift(-1)} style={styles.monthArrow}><Text style={styles.monthArrowText}>‹</Text></Pressable><Text style={styles.monthPickerValue}>{year}년 {month}월</Text><Pressable onPress={() => shift(1)} style={styles.monthArrow}><Text style={styles.monthArrowText}>›</Text></Pressable></View>
-    <View style={styles.calendarCard}><View style={styles.weekRow}>{['일','월','화','수','목','금','토'].map((label, index) => <Text key={label} style={[styles.weekLabel, index === 0 && styles.sunday]}>{label}</Text>)}</View><View style={styles.calendarGrid}>{days.map((day) => { const count = data.visits.filter((v) => v.date === day).length; const inMonth = monthKey(day) === selectedMonth; const active = day === selectedDate; return <Pressable key={day} onPress={() => setSelectedDate(day)} style={[styles.dayCell, active && styles.dayCellActive]}><Text style={[styles.dayText, !inMonth && styles.dayMuted, day === todayIso() && styles.dayToday, active && styles.dayTextActive]}>{Number(day.slice(8))}</Text>{count > 0 && <View style={[styles.dayBadge, active && styles.dayBadgeActive]}><Text style={[styles.dayBadgeText, active && styles.dayBadgeTextActive]}>{count}</Text></View>}</Pressable>; })}</View></View>
+    <View style={styles.calendarCard}><View style={styles.weekRow}>{['일','월','화','수','목','금','토'].map((label, index) => <Text key={label} style={[styles.weekLabel, index === 0 && styles.sunday]}>{label}</Text>)}</View><View style={styles.calendarGrid}>{days.map((day) => { const count = data.visits.filter((v) => v.date === day).length; const hasNote = data.dailyNotes.some((n) => n.date === day); const inMonth = monthKey(day) === selectedMonth; const active = day === selectedDate; const today = day === todayIso(); return <Pressable key={day} onPress={() => setSelectedDate(day)} style={[styles.dayCell, active && styles.dayCellActive]}><View style={styles.dayNumberWrap}><Text style={[styles.dayText, !inMonth && styles.dayMuted, today && styles.dayToday, active && styles.dayTextActive]}>{Number(day.slice(8))}</Text>{today && <View style={[styles.todayIndicator, active && styles.todayIndicatorActive]} />}</View><View style={styles.dayMarkers}>{count > 0 && <View style={[styles.dayBadge, active && styles.dayBadgeActive]}><Text style={[styles.dayBadgeText, active && styles.dayBadgeTextActive]}>{count}</Text></View>}{hasNote && <View style={[styles.noteDot, active && styles.noteDotActive]} />}</View></Pressable>; })}</View></View>
     <View style={styles.calendarSummary}><View><Text style={styles.calendarSummaryLabel}>시술 매출</Text><Text style={styles.calendarSummaryValue}>{money(serviceSales)}</Text></View><View><Text style={styles.calendarSummaryLabel}>제품 매출</Text><Text style={styles.calendarSummaryValue}>{money(productSales)}</Text></View><View><Text style={styles.calendarSummaryLabel}>총매출</Text><Text style={styles.calendarSummaryValue}>{money(serviceSales + productSales)}</Text></View></View>
     <View style={styles.daySectionTop}><SectionTitle title={`${selectedDate.slice(5).replace('-', '월 ')}일 방문`} count={selectedVisits.length} /><Pressable onPress={() => data.customers.length ? setPickerOpen(true) : Alert.alert('먼저 고객을 등록해주세요.')} style={styles.smallAdd}><Text style={styles.smallAddText}>＋ 기록 추가</Text></Pressable></View>
     {selectedVisits.length === 0 ? <View style={styles.slimEmpty}><Text style={styles.slimEmptyText}>이 날짜에는 방문 기록이 없어요.</Text></View> : selectedVisits.map((visit) => { const customer = data.customers.find((c) => c.id === visit.customerId); return <Pressable key={visit.id} onPress={() => customer && onOpen(customer.id)} style={styles.rowCard}><Avatar name={customer?.name ?? '?'} /><View style={{ flex: 1 }}><Text style={styles.rowTitle}>{customer?.name ?? '삭제된 고객'}</Text><Text style={styles.rowSub}>{visit.service} · {visit.visitType}</Text></View><Text style={styles.rowPrice}>{money(visit.price + visit.productSales)}</Text></Pressable>; })}
+    <View style={styles.daySectionTop}><SectionTitle title="날짜 메모" count={selectedNotes.length} /><Pressable onPress={() => openNote()} style={styles.smallAdd}><Text style={styles.smallAddText}>＋ 메모 추가</Text></Pressable></View>
+    {selectedNotes.length === 0 ? <View style={styles.slimEmpty}><Text style={styles.slimEmptyText}>이 날짜에 작성한 메모가 없어요.</Text></View> : selectedNotes.map((note) => <View key={note.id} style={styles.noteCard}><Text style={styles.noteText}>{note.memo}</Text><View style={styles.noteActions}><Pressable onPress={() => openNote(note)}><Text style={styles.noteEdit}>수정</Text></Pressable><Pressable onPress={() => Alert.alert('메모를 삭제할까요?', undefined, [{ text: '취소', style: 'cancel' }, { text: '삭제', style: 'destructive', onPress: () => onDeleteNote(note.id) }])}><Text style={styles.noteDelete}>삭제</Text></Pressable></View></View>)}
     <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={() => setPickerOpen(false)}><Pressable style={styles.pickerBackdrop} onPress={() => setPickerOpen(false)}><Pressable style={styles.customerPicker} onPress={() => {}}><Text style={styles.customerPickerTitle}>고객 선택</Text><Text style={styles.customerPickerSub}>{selectedDate} 방문 기록을 추가합니다.</Text><ScrollView>{[...data.customers].sort((a,b) => a.name.localeCompare(b.name,'ko')).map((customer) => <Pressable key={customer.id} onPress={() => { setPickerOpen(false); onAddVisit(customer.id, selectedDate); }} style={styles.pickerCustomer}><Avatar name={customer.name} /><View><Text style={styles.rowTitle}>{customer.name}</Text><Text style={styles.rowSub}>{displayPhone(customer.phone, true)}</Text></View></Pressable>)}</ScrollView></Pressable></Pressable></Modal>
+    <EditorShell visible={noteOpen} title={`${selectedDate.slice(5).replace('-', '월 ')}일 메모`} onClose={() => setNoteOpen(false)}><Field label="메모" value={noteText} onChangeText={setNoteText} placeholder="예약, 휴무, 할 일 등을 기록하세요." multiline /><AppButton label={editingNote ? '메모 수정' : '메모 저장'} onPress={saveNote} /></EditorShell>
   </ScrollView>;
 }
 
 function getCallbacks(data: AppData) {
-  const today = todayIso();
   return data.customers.map((customer) => {
-    const visit = data.visits.filter((v) => v.customerId === customer.id && v.nextVisitDate).sort((a, b) => b.date.localeCompare(a.date))[0];
+    const visit = data.visits.filter((v) => v.customerId === customer.id).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))[0];
     if (!visit?.nextVisitDate) return null;
     return { customer, visit, dueDate: visit.nextVisitDate };
-  }).filter((x): x is NonNullable<typeof x> => Boolean(x && x.dueDate <= today)).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  }).filter((x): x is NonNullable<typeof x> => Boolean(x)).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }
 
 function Callbacks({ data, onOpen, onDone }: { data: AppData; onOpen: (id: string) => void; onDone: (visitId: string) => void }) {
   const items = getCallbacks(data).filter((x) => !x.visit.callbackDone);
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
-      <Header title="콜백" subtitle="다음 방문 예정일이 지난 고객을 확인하세요." />
+      <Header title="콜백" subtitle="예정된 다음 방문일을 빠짐없이 확인하세요." />
       {items.length === 0 ? <Empty title="예정된 콜백이 없어요" description="방문 기록에 다음 방문 예정일을 입력하면 이곳에 표시돼요." /> : items.map(({ customer, visit, dueDate }) => (
         <View key={visit.id} style={styles.callbackCard}>
-          <Pressable onPress={() => onOpen(customer.id)} style={styles.callbackMain}><Avatar name={customer.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{customer.name}</Text><Text style={styles.rowSub}>최근 {visit.service} · {visit.date}</Text><Text style={styles.callbackDue}>{dueDate < todayIso() ? `${dueDate}부터 연락 필요` : `오늘 연락 예정`}</Text></View></Pressable>
+          <Pressable onPress={() => onOpen(customer.id)} style={styles.callbackMain}><Avatar name={customer.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{customer.name}</Text><Text style={styles.rowSub}>최근 {visit.service} · {visit.date}</Text><Text style={[styles.callbackDue, dueDate > todayIso() && styles.callbackUpcoming]}>{dueDate < todayIso() ? `${dueDate}부터 연락 필요` : dueDate === todayIso() ? '오늘 연락 예정' : `${dueDate} 방문 예정`}</Text></View></Pressable>
           <AppButton label="연락 완료" onPress={() => onDone(visit.id)} secondary />
         </View>
       ))}
@@ -506,7 +564,7 @@ function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, sync
       if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'MY CLIENT BOOK 백업 저장' });
     } catch { Alert.alert('백업에 실패했어요', '잠시 후 다시 시도해주세요.'); }
   };
-  const reset = () => Alert.alert('모든 기록을 삭제할까요?', '계정은 유지되고 고객·방문 기록만 삭제됩니다.', [{ text: '취소', style: 'cancel' }, { text: '전체 삭제', style: 'destructive', onPress: () => void onChange({ customers: [], visits: [] }) }]);
+  const reset = () => Alert.alert('모든 기록을 삭제할까요?', '계정은 유지되고 고객·방문 기록·캘린더 메모만 삭제됩니다.', [{ text: '취소', style: 'cancel' }, { text: '전체 삭제', style: 'destructive', onPress: () => void onChange({ customers: [], visits: [], dailyNotes: [] }) }]);
   const deleteAccount = () => Alert.alert('계정과 모든 데이터를 삭제할까요?', '서버와 이 기기의 기록이 모두 삭제되며 복구할 수 없어요.', [{ text: '취소', style: 'cancel' }, { text: '계정 삭제', style: 'destructive', onPress: async () => { const { error } = await supabase.functions.invoke('delete-account', { body: { confirm: true } }); if (error) return Alert.alert('계정을 삭제할 수 없어요', '잠시 후 다시 시도해주세요.'); await supabase.auth.signOut(); } }]);
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
@@ -515,7 +573,7 @@ function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, sync
       <Pressable onPress={() => void onRefresh()} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>지금 동기화</Text><Text style={styles.settingSub}>서버의 최신 기록을 다시 불러옵니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
       <View style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>Face ID 잠금</Text><Text style={styles.settingSub}>앱을 열 때 고객 정보를 보호합니다.</Text></View><Switch value={faceIdEnabled} onValueChange={toggleFaceId} trackColor={{ true: ACCENT }} /></View>
       <Pressable onPress={backup} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>데이터 백업</Text><Text style={styles.settingSub}>고객과 방문 기록을 파일로 안전하게 저장합니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
-      <View style={styles.privacyCard}><Text style={styles.privacyTitle}>계정 동기화</Text><Text style={styles.privacyText}>고객과 방문 기록만 저장합니다. 사진, 관리자센터, 인증 코드, 체험판 기능은 사용하지 않습니다.</Text></View>
+      <View style={styles.privacyCard}><Text style={styles.privacyTitle}>계정 동기화</Text><Text style={styles.privacyText}>고객, 방문 기록과 캘린더 메모를 저장합니다. 사진, 관리자센터, 인증 코드, 체험판 기능은 사용하지 않습니다.</Text></View>
       <AppButton label="로그아웃" secondary onPress={() => void supabase.auth.signOut()} />
       <Pressable onPress={reset} style={styles.dangerButton}><Text style={styles.dangerText}>모든 데이터 삭제</Text></Pressable>
       <Pressable onPress={deleteAccount} style={styles.dangerButton}><Text style={styles.dangerText}>계정 삭제</Text></Pressable>
@@ -550,8 +608,8 @@ function CustomerEditor({ visible, initial, onClose, onSave }: { visible: boolea
 function VisitEditor({ visible, customer, initialDate, onClose, onSave }: { visible: boolean; customer: Customer; initialDate: string; onClose: () => void; onSave: (v: Visit) => void }) {
   const [date, setDate] = useState(todayIso()); const [service, setService] = useState(''); const [memo, setMemo] = useState(''); const [price, setPrice] = useState(''); const [product, setProduct] = useState(''); const [visitType, setVisitType] = useState<'신규' | '재방문'>('재방문'); const [nextDate, setNextDate] = useState('');
   useEffect(() => { if (visible) { setDate(initialDate); setService(''); setMemo(''); setPrice(''); setProduct(''); setVisitType('재방문'); setNextDate(''); } }, [visible, initialDate]);
-  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); if (date.length !== 10 || (nextDate && nextDate.length !== 10)) return Alert.alert('날짜를 YYYY-MM-DD 형식으로 입력해주세요.'); onSave({ id: uuid(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), productSales: parseMoney(product), visitType, nextVisitDate: nextDate || undefined, createdAt: new Date().toISOString() }); };
-  return <EditorShell visible={visible} title={`${customer.name} 방문 기록`} onClose={onClose}><Field label="방문일 *" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" /><Text style={styles.label}>방문 구분</Text><View style={styles.segment}><Pressable onPress={() => setVisitType('신규')} style={[styles.segmentButton, visitType === '신규' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '신규' && styles.segmentTextActive]}>신규</Text></Pressable><Pressable onPress={() => setVisitType('재방문')} style={[styles.segmentButton, visitType === '재방문' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '재방문' && styles.segmentTextActive]}>재방문</Text></Pressable></View><Field label="시술명 *" value={service} onChangeText={setService} placeholder="예: 디자인컷 + 다운펌" /><View style={styles.moneyRow}><View style={{ flex: 1 }}><Field label="시술 금액" value={price} onChangeText={setPrice} placeholder="0" keyboardType="number-pad" /></View><View style={{ flex: 1 }}><Field label="제품 판매 금액" value={product} onChangeText={setProduct} placeholder="0" keyboardType="number-pad" /></View></View><Field label="다음 방문 예정일" value={nextDate} onChangeText={setNextDate} placeholder="YYYY-MM-DD (선택)" /><Field label="시술 메모" value={memo} onChangeText={setMemo} placeholder="약제, 배합, 디자인 포인트 등을 기록하세요." multiline /><AppButton label="방문 기록 저장" onPress={submit} /></EditorShell>;
+  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); onSave({ id: uuid(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), productSales: parseMoney(product), visitType, nextVisitDate: nextDate || undefined, createdAt: new Date().toISOString() }); };
+  return <EditorShell visible={visible} title={`${customer.name} 방문 기록`} onClose={onClose}><DateField label="방문일 *" value={date} onChange={setDate} /><Text style={styles.label}>방문 구분</Text><View style={styles.segment}><Pressable onPress={() => setVisitType('신규')} style={[styles.segmentButton, visitType === '신규' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '신규' && styles.segmentTextActive]}>신규</Text></Pressable><Pressable onPress={() => setVisitType('재방문')} style={[styles.segmentButton, visitType === '재방문' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '재방문' && styles.segmentTextActive]}>재방문</Text></Pressable></View><Field label="시술명 *" value={service} onChangeText={setService} placeholder="예: 디자인컷 + 다운펌" /><View style={styles.moneyRow}><View style={{ flex: 1 }}><Field label="시술 금액" value={price} onChangeText={setPrice} placeholder="0" keyboardType="number-pad" /></View><View style={{ flex: 1 }}><Field label="제품 판매 금액" value={product} onChangeText={setProduct} placeholder="0" keyboardType="number-pad" /></View></View><DateField label="다음 방문 예정일" value={nextDate} onChange={setNextDate} optional /><Field label="시술 메모" value={memo} onChangeText={setMemo} placeholder="약제, 배합, 디자인 포인트 등을 기록하세요." multiline /><AppButton label="방문 기록 저장" onPress={submit} /></EditorShell>;
 }
 
 function EditorShell({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
@@ -587,7 +645,7 @@ const styles = StyleSheet.create({
   button: { minHeight: 54, borderRadius: 17, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, marginVertical: 5 }, buttonSecondary: { backgroundColor: '#edf3f0' }, buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' }, buttonTextSecondary: { color: ACCENT }, pressed: { opacity: 0.72 }, disabled: { opacity: 0.4 },
   empty: { backgroundColor: '#fff', padding: 28, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: '#e4e7e2', marginTop: 8 }, emptyMark: { color: ACCENT, fontSize: 42, fontWeight: '200' }, emptyTitle: { fontSize: 19, fontWeight: '800', color: '#1b1e1b', marginTop: 8 }, emptyText: { color: '#7b807b', textAlign: 'center', lineHeight: 20, marginVertical: 10 }, slimEmpty: { padding: 18, borderRadius: 16, backgroundColor: '#e9eeea', marginBottom: 15 }, slimEmptyText: { color: '#737a74', textAlign: 'center' },
   search: { backgroundColor: '#fff', minHeight: 52, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: '#e0e3df', marginBottom: 14, fontSize: 15 }, customerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 11, borderWidth: 1, borderColor: '#e4e7e3' }, customerName: { fontSize: 17, fontWeight: '800', color: '#1b1e1b' }, countBadge: { paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#edf3f0', borderRadius: 10 }, countText: { color: ACCENT, fontSize: 12, fontWeight: '800' },
-  callbackCard: { backgroundColor: '#fff', borderRadius: 22, padding: 17, marginBottom: 12, borderWidth: 1, borderColor: '#e3e6e2' }, callbackMain: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 }, callbackDue: { color: '#b15f3b', fontWeight: '700', fontSize: 12, marginTop: 7 },
+  callbackCard: { backgroundColor: '#fff', borderRadius: 22, padding: 17, marginBottom: 12, borderWidth: 1, borderColor: '#e3e6e2' }, callbackMain: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 }, callbackDue: { color: '#b15f3b', fontWeight: '700', fontSize: 12, marginTop: 7 }, callbackUpcoming: { color: ACCENT },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }, statCard: { width: '48.5%', backgroundColor: '#fff', borderRadius: 20, padding: 18, marginBottom: 10, minHeight: 105, justifyContent: 'space-between', borderWidth: 1, borderColor: '#e3e6e2' }, statLabel: { color: '#777d78', fontSize: 13 }, statValue: { color: '#1b1e1b', fontSize: 19, fontWeight: '900', letterSpacing: -0.5 }, chartCard: { backgroundColor: '#fff', borderRadius: 22, padding: 18, borderWidth: 1, borderColor: '#e3e6e2' }, chartRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 9 }, chartLabel: { width: 32, color: '#727772', fontSize: 12 }, chartTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: '#e9ece8', overflow: 'hidden' }, chartBar: { height: 10, borderRadius: 5, backgroundColor: ACCENT }, chartValue: { width: 43, textAlign: 'right', color: '#555b56', fontSize: 11, fontWeight: '700' },
   monthPicker: { minHeight: 70, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e5e1', paddingHorizontal: 12, marginBottom: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, monthArrow: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }, monthArrowText: { fontSize: 34, color: ACCENT, fontWeight: '300' }, monthPickerLabel: { textAlign: 'center', color: '#888d88', fontSize: 11 }, monthPickerValue: { color: '#1c201c', fontSize: 18, fontWeight: '900', textAlign: 'center', marginTop: 3 },
   salesCard: { backgroundColor: '#173f36', borderRadius: 22, padding: 20, marginBottom: 18 }, salesRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9 }, salesLabel: { color: '#b2cac3', fontSize: 14 }, salesValue: { color: '#fff', fontSize: 15, fontWeight: '800' }, salesTotal: { marginTop: 7, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#6a8981' }, salesTotalLabel: { color: '#fff', fontSize: 16, fontWeight: '900' }, salesTotalValue: { color: '#fff', fontSize: 21, fontWeight: '900' },
@@ -595,8 +653,8 @@ const styles = StyleSheet.create({
   topBar: { height: 62, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: BG, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d9dcd8' }, topLogo: { color: '#173f36', fontSize: 16, fontWeight: '900', letterSpacing: 1.5 }, menuButton: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#fff', borderWidth: 1, borderColor: '#dfe3de', alignItems: 'center', justifyContent: 'center', gap: 4 }, menuLine: { width: 20, height: 2, borderRadius: 1, backgroundColor: '#203f37' }, menuBackdrop: { flex: 1, backgroundColor: 'rgba(17,25,21,0.35)', alignItems: 'flex-end' }, menuPanel: { width: '78%', height: '100%', backgroundColor: BG, paddingTop: 58, paddingHorizontal: 20 }, menuPanelTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }, menuPanelTitle: { fontSize: 26, fontWeight: '900', color: '#171a17' }, menuClose: { fontSize: 36, color: '#343934', fontWeight: '300' }, menuItem: { minHeight: 62, borderRadius: 18, paddingHorizontal: 15, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }, menuItemActive: { backgroundColor: '#dfece7' }, menuIconWrap: { width: 40, alignItems: 'center' }, menuItemIcon: { color: '#747b76', fontSize: 23, fontWeight: '700' }, menuItemText: { color: '#343934', fontSize: 17, fontWeight: '800', marginLeft: 8 }, menuItemTextActive: { color: ACCENT },
   detailScroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 }, detailTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 54 }, back: { fontSize: 40, color: '#242824', fontWeight: '300' }, detailTopTitle: { fontSize: 16, fontWeight: '800', color: '#1c1f1c' }, edit: { color: ACCENT, fontWeight: '800', fontSize: 15 }, profile: { alignItems: 'center', paddingVertical: 22 }, profileName: { fontSize: 27, fontWeight: '900', color: '#171a17', marginTop: 13 }, profileSub: { color: '#7b807b', marginTop: 6 }, summaryCard: { backgroundColor: '#173f36', borderRadius: 22, paddingVertical: 19, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 12 }, summaryValue: { color: '#fff', fontSize: 17, fontWeight: '900', textAlign: 'center' }, summaryLabel: { color: '#a9c0ba', fontSize: 11, marginTop: 5, textAlign: 'center' }, divider: { width: StyleSheet.hairlineWidth, height: 35, backgroundColor: '#719087' }, infoCard: { backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 18, marginBottom: 12, borderWidth: 1, borderColor: '#e3e6e2' }, infoRow: { paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e4e6e3' }, infoLabel: { color: '#878c87', fontSize: 12, marginBottom: 6 }, infoValue: { color: '#252925', fontSize: 15, lineHeight: 21, fontWeight: '600' },
   visitCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 20, padding: 14, marginBottom: 11, borderWidth: 1, borderColor: '#e2e5e1' }, visitDate: { color: ACCENT, fontSize: 11, fontWeight: '800' }, visitService: { color: '#1e211e', fontSize: 16, fontWeight: '900', marginTop: 5 }, visitMemo: { color: '#777c78', fontSize: 12, lineHeight: 17, marginTop: 5 }, visitPrice: { color: '#333833', fontWeight: '800', fontSize: 13, marginTop: 7 }, nextVisit: { color: '#a45c3d', fontWeight: '700', fontSize: 12, marginTop: 7 },
-  modalSafe: { flex: 1, backgroundColor: BG }, modalTop: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d8dbd7' }, modalClose: { color: ACCENT, fontSize: 15, fontWeight: '700' }, modalTitle: { fontSize: 17, fontWeight: '900', color: '#1c1f1c' }, modalContent: { padding: 20, paddingBottom: 50 }, fieldWrap: { marginBottom: 17 }, label: { color: '#343834', fontSize: 13, fontWeight: '800', marginBottom: 8 }, input: { backgroundColor: '#fff', minHeight: 53, borderRadius: 16, borderWidth: 1, borderColor: '#dfe2de', paddingHorizontal: 15, fontSize: 16, color: '#202420' }, textarea: { minHeight: 104, paddingTop: 14, textAlignVertical: 'top' }, moneyRow: { flexDirection: 'row', gap: 10 }, fieldHelp: { color: '#7b817c', fontSize: 12, lineHeight: 18, marginTop: -10, marginBottom: 17 }, segment: { flexDirection: 'row', backgroundColor: '#e9ece8', padding: 4, borderRadius: 16, marginBottom: 18 }, segmentButton: { flex: 1, height: 45, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, segmentActive: { backgroundColor: ACCENT }, segmentText: { color: '#767c77', fontSize: 15, fontWeight: '800' }, segmentTextActive: { color: '#fff' },
-  calendarCard: { backgroundColor: '#fff', borderRadius: 22, padding: 12, borderWidth: 1, borderColor: '#e2e5e1' }, weekRow: { flexDirection: 'row', marginBottom: 5 }, weekLabel: { width: '14.285%', textAlign: 'center', color: '#737973', fontSize: 12, fontWeight: '800', paddingVertical: 7 }, sunday: { color: '#bc554c' }, calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' }, dayCell: { width: '14.285%', height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }, dayCellActive: { backgroundColor: ACCENT }, dayText: { color: '#272b27', fontSize: 14, fontWeight: '700' }, dayMuted: { color: '#c4c7c4' }, dayToday: { textDecorationLine: 'underline', fontWeight: '900' }, dayTextActive: { color: '#fff' }, dayBadge: { minWidth: 17, height: 17, borderRadius: 9, backgroundColor: '#dfece7', alignItems: 'center', justifyContent: 'center', marginTop: 2 }, dayBadgeActive: { backgroundColor: '#fff' }, dayBadgeText: { color: ACCENT, fontSize: 9, fontWeight: '900' }, dayBadgeTextActive: { color: ACCENT }, calendarSummary: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#173f36', borderRadius: 20, padding: 17, marginTop: 12, marginBottom: 14 }, calendarSummaryLabel: { color: '#a9c0ba', fontSize: 10, textAlign: 'center' }, calendarSummaryValue: { color: '#fff', fontSize: 13, fontWeight: '900', marginTop: 5, textAlign: 'center' },
-  daySectionTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, smallAdd: { backgroundColor: '#e1ece7', borderRadius: 13, paddingHorizontal: 12, paddingVertical: 9 }, smallAddText: { color: ACCENT, fontSize: 12, fontWeight: '900' }, pickerBackdrop: { flex: 1, backgroundColor: 'rgba(17,25,21,0.35)', justifyContent: 'flex-end' }, customerPicker: { maxHeight: '70%', backgroundColor: BG, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 40 }, customerPickerTitle: { color: '#171a17', fontSize: 23, fontWeight: '900' }, customerPickerSub: { color: '#777d78', fontSize: 13, marginTop: 5, marginBottom: 18 }, pickerCustomer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 17, padding: 13, marginBottom: 8, borderWidth: 1, borderColor: '#e2e5e1' },
+  modalSafe: { flex: 1, backgroundColor: BG }, modalTop: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d8dbd7' }, modalClose: { color: ACCENT, fontSize: 15, fontWeight: '700' }, modalTitle: { fontSize: 17, fontWeight: '900', color: '#1c1f1c' }, modalContent: { padding: 20, paddingBottom: 50 }, fieldWrap: { marginBottom: 17 }, label: { color: '#343834', fontSize: 13, fontWeight: '800', marginBottom: 8 }, input: { backgroundColor: '#fff', minHeight: 53, borderRadius: 16, borderWidth: 1, borderColor: '#dfe2de', paddingHorizontal: 15, fontSize: 16, color: '#202420' }, textarea: { minHeight: 104, paddingTop: 14, textAlignVertical: 'top' }, moneyRow: { flexDirection: 'row', gap: 10 }, fieldHelp: { color: '#7b817c', fontSize: 12, lineHeight: 18, marginTop: -10, marginBottom: 17 }, segment: { flexDirection: 'row', backgroundColor: '#e9ece8', padding: 4, borderRadius: 16, marginBottom: 18 }, segmentButton: { flex: 1, height: 45, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, segmentActive: { backgroundColor: ACCENT }, segmentText: { color: '#767c77', fontSize: 15, fontWeight: '800' }, segmentTextActive: { color: '#fff' }, dateField: { backgroundColor: '#fff', minHeight: 56, borderRadius: 16, borderWidth: 1, borderColor: '#dfe2de', paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, dateFieldText: { color: '#202420', fontSize: 16, fontWeight: '600' }, dateFieldPlaceholder: { color: '#a4a7a3', fontWeight: '400' }, dateFieldIcon: { color: ACCENT, fontSize: 20 },
+  calendarCard: { backgroundColor: '#fff', borderRadius: 22, padding: 12, borderWidth: 1, borderColor: '#e2e5e1' }, weekRow: { flexDirection: 'row', marginBottom: 5 }, weekLabel: { width: '14.285%', textAlign: 'center', color: '#737973', fontSize: 12, fontWeight: '800', paddingVertical: 7 }, sunday: { color: '#bc554c' }, calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' }, dayCell: { width: '14.285%', height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }, dayCellActive: { backgroundColor: ACCENT }, dayNumberWrap: { height: 21, minWidth: 24, alignItems: 'center', justifyContent: 'flex-start' }, dayText: { color: '#272b27', fontSize: 14, lineHeight: 17, fontWeight: '700' }, dayMuted: { color: '#c4c7c4' }, dayToday: { fontWeight: '900' }, todayIndicator: { position: 'absolute', bottom: 0, width: 14, height: 2, borderRadius: 1, backgroundColor: '#252925' }, todayIndicatorActive: { backgroundColor: '#fff' }, dayTextActive: { color: '#fff' }, dayMarkers: { height: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 }, dayBadge: { minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#dfece7', alignItems: 'center', justifyContent: 'center' }, dayBadgeActive: { backgroundColor: '#fff' }, dayBadgeText: { color: ACCENT, fontSize: 9, fontWeight: '900' }, dayBadgeTextActive: { color: ACCENT }, noteDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#b15f3b' }, noteDotActive: { backgroundColor: '#fff' }, calendarSummary: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#173f36', borderRadius: 20, padding: 17, marginTop: 12, marginBottom: 14 }, calendarSummaryLabel: { color: '#a9c0ba', fontSize: 10, textAlign: 'center' }, calendarSummaryValue: { color: '#fff', fontSize: 13, fontWeight: '900', marginTop: 5, textAlign: 'center' },
+  daySectionTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, smallAdd: { backgroundColor: '#e1ece7', borderRadius: 13, paddingHorizontal: 12, paddingVertical: 9 }, smallAddText: { color: ACCENT, fontSize: 12, fontWeight: '900' }, pickerBackdrop: { flex: 1, backgroundColor: 'rgba(17,25,21,0.35)', justifyContent: 'flex-end' }, customerPicker: { maxHeight: '70%', backgroundColor: BG, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 40 }, customerPickerTitle: { color: '#171a17', fontSize: 23, fontWeight: '900' }, customerPickerSub: { color: '#777d78', fontSize: 13, marginTop: 5, marginBottom: 18 }, pickerCustomer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 17, padding: 13, marginBottom: 8, borderWidth: 1, borderColor: '#e2e5e1' }, datePickerPanel: { backgroundColor: BG, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 34 }, datePickerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, datePickerTitle: { fontSize: 22, fontWeight: '900', color: '#171a17' }, datePickerClose: { fontSize: 34, color: '#4f5550', fontWeight: '300' }, datePickerMonth: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8 }, datePickerDay: { width: '14.285%', height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, datePickerActions: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 12 }, noteCard: { backgroundColor: '#fff', borderRadius: 17, padding: 15, marginBottom: 10, borderWidth: 1, borderColor: '#e2e5e1' }, noteText: { color: '#282c28', fontSize: 14, lineHeight: 21 }, noteActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 18, marginTop: 12 }, noteEdit: { color: ACCENT, fontSize: 13, fontWeight: '800' }, noteDelete: { color: '#bc554c', fontSize: 13, fontWeight: '800' },
   lockScreen: { flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center', padding: 30 }, lockLogo: { color: '#173f36', fontSize: 44, lineHeight: 43, letterSpacing: -2, fontWeight: '900', textAlign: 'center' }, lockText: { color: '#737973', marginTop: 24, marginBottom: 20 },
 });
