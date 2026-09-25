@@ -43,6 +43,7 @@ type Visit = {
   visitType: '신규' | '재방문';
   nextVisitDate?: string;
   callbackDone?: boolean;
+  callbackCompletedAt?: string;
   createdAt: string;
 };
 type DailyNote = {
@@ -87,7 +88,7 @@ function migrateLegacy(raw: string): AppData {
   const visits = (parsed.visits ?? []).flatMap((v) => {
     const customerId = v.customerId ? idMap.get(v.customerId) : undefined;
     if (!customerId) return [];
-    return [{ id: uuid(), customerId, date: v.date ?? todayIso(), service: v.service ?? '', memo: v.memo ?? '', price: Math.max((v.price ?? 0) - (v.discount ?? 0), 0), productSales: v.productSales ?? 0, visitType: '재방문' as const, nextVisitDate: undefined, callbackDone: v.callbackDone ?? false, createdAt: new Date().toISOString() }];
+    return [{ id: uuid(), customerId, date: v.date ?? todayIso(), service: v.service ?? '', memo: v.memo ?? '', price: Math.max((v.price ?? 0) - (v.discount ?? 0), 0), productSales: v.productSales ?? 0, visitType: '재방문' as const, nextVisitDate: undefined, callbackDone: v.callbackDone ?? false, callbackCompletedAt: undefined, createdAt: new Date().toISOString() }];
   });
   return { customers, visits, dailyNotes: [] };
 }
@@ -105,14 +106,14 @@ async function readCloud(uid: string): Promise<AppData> {
   if (ce) throw ce; if (ve) throw ve; if (ne) throw ne;
   return {
     customers: (customers ?? []).map((r) => ({ id: r.id, name: r.name, phone: phoneDigits(r.phone_last4 ?? ''), preferredStyle: r.preferred_style ?? '', notes: r.memo ?? '', createdAt: r.created_at })),
-    visits: (visits ?? []).map((r) => ({ id: r.id, customerId: r.customer_id, date: r.visit_date, service: r.service ?? '', memo: r.memo ?? '', price: Number(r.beauty_sales ?? r.service_price ?? 0), productSales: Number(r.retail_sales ?? 0), visitType: r.visit_type === '신규' ? '신규' : '재방문', nextVisitDate: r.next_booking_date ?? undefined, callbackDone: r.callback_status === '연락완료', createdAt: r.created_at })),
+    visits: (visits ?? []).map((r) => ({ id: r.id, customerId: r.customer_id, date: r.visit_date, service: r.service ?? '', memo: r.memo ?? '', price: Number(r.beauty_sales ?? r.service_price ?? 0), productSales: Number(r.retail_sales ?? 0), visitType: r.visit_type === '신규' ? '신규' : '재방문', nextVisitDate: r.next_booking_date ?? undefined, callbackDone: r.callback_status === '연락완료', callbackCompletedAt: r.callback_completed_at ?? (r.callback_status === '연락완료' ? r.updated_at ?? r.created_at : undefined), createdAt: r.created_at })),
     dailyNotes: (notes ?? []).map((r) => ({ id: r.id, date: r.note_date, memo: r.memo ?? '', createdAt: r.created_at })),
   };
 }
 
 async function writeCloud(next: AppData, uid: string) {
   const customers = next.customers.map((c) => ({ id: c.id, user_id: uid, name: c.name, phone_last4: c.phone, preferred_style: c.preferredStyle || null, memo: c.notes || null, default_cycle: 35, created_at: c.createdAt }));
-  const visits = next.visits.map((v) => ({ id: v.id, user_id: uid, customer_id: v.customerId, visit_date: v.date, visit_type: v.visitType, service: v.service, service_price: v.price, discount: 0, beauty_sales: v.price, retail_sales: v.productSales, callback_cycle: 35, callback_status: v.callbackDone ? '연락완료' : '미연락', next_booking_date: v.nextVisitDate || null, memo: v.memo || null, created_at: v.createdAt }));
+  const visits = next.visits.map((v) => ({ id: v.id, user_id: uid, customer_id: v.customerId, visit_date: v.date, visit_type: v.visitType, service: v.service, service_price: v.price, discount: 0, beauty_sales: v.price, retail_sales: v.productSales, callback_cycle: 35, callback_status: v.callbackDone ? '연락완료' : '미연락', callback_completed_at: v.callbackDone ? v.callbackCompletedAt || null : null, next_booking_date: v.nextVisitDate || null, memo: v.memo || null, created_at: v.createdAt }));
   const notes = next.dailyNotes.map((n) => ({ id: n.id, user_id: uid, note_date: n.date, memo: n.memo, created_at: n.createdAt }));
   if (customers.length) { const { error } = await supabase.from('customers').upsert(customers, { onConflict: 'id' }); if (error) throw error; }
   if (visits.length) { const { error } = await supabase.from('visits').upsert(visits, { onConflict: 'id' }); if (error) throw error; }
@@ -367,7 +368,7 @@ export default function App() {
               {tab === 'home' && <Home data={data} onOpenCustomer={setSelectedId} onAdd={() => setShowCustomer(true)} />}
               {tab === 'customers' && <Customers customers={data.customers} visits={data.visits} onOpen={setSelectedId} onAdd={() => setShowCustomer(true)} />}
               {tab === 'calendar' && <CalendarScreen data={data} onOpen={setSelectedId} onAddVisit={(customerId, date) => { setSelectedId(customerId); setEditingVisit(null); setVisitInitialDate(date); setShowVisit(true); }} onSaveNote={(note) => void persist({ ...data, dailyNotes: [...data.dailyNotes.filter((n) => n.id !== note.id), note] })} onDeleteNote={(noteId) => void persist({ ...data, dailyNotes: data.dailyNotes.filter((n) => n.id !== noteId) })} />}
-              {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onToggle={(visitId, done) => void persist({ ...data, visits: data.visits.map((v) => v.id === visitId ? { ...v, callbackDone: done } : v) })} />}
+              {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onToggle={(visitId, done) => void persist({ ...data, visits: data.visits.map((v) => v.id === visitId ? { ...v, callbackDone: done, callbackCompletedAt: done ? new Date().toISOString() : undefined } : v) })} />}
               {tab === 'stats' && <Stats data={data} />}
               {tab === 'settings' && <Settings data={data} onChange={persist} faceIdEnabled={faceIdEnabled} setFaceIdEnabled={setFaceIdEnabled} email={session.user.email ?? ''} syncing={syncing} syncPending={syncPending} onRefresh={refresh} />}
             </View>
@@ -510,7 +511,7 @@ function getCallbacks(data: AppData) {
 function Callbacks({ data, onOpen, onToggle }: { data: AppData; onOpen: (id: string) => void; onToggle: (visitId: string, done: boolean) => void }) {
   const items = getCallbacks(data);
   const pending = items.filter((x) => !x.visit.callbackDone);
-  const completed = items.filter((x) => x.visit.callbackDone);
+  const completed = items.filter((x) => x.visit.callbackDone).sort((a, b) => (b.visit.callbackCompletedAt ?? '').localeCompare(a.visit.callbackCompletedAt ?? '') || b.dueDate.localeCompare(a.dueDate));
   const renderCard = ({ customer, visit, dueDate }: (typeof items)[number], done: boolean) => (
     <View key={visit.id} style={[styles.callbackCard, done && styles.callbackCompleted]}>
       <Pressable onPress={() => onOpen(customer.id)} style={styles.callbackMain}><Avatar name={customer.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{customer.name}</Text><Text style={styles.rowSub}>최근 {visit.service} · {visit.date}</Text><Text style={[styles.callbackDue, dueDate > todayIso() && styles.callbackUpcoming]}>{done ? '연락 완료' : dueDate < todayIso() ? `${dueDate}부터 연락 필요` : dueDate === todayIso() ? '오늘 연락 예정' : `${dueDate} 방문 예정`}</Text></View></Pressable>
@@ -681,7 +682,7 @@ function CustomerEditor({ visible, initial, onClose, onSave }: { visible: boolea
 function VisitEditor({ visible, customer, initialDate, initial, onClose, onSave }: { visible: boolean; customer: Customer; initialDate: string; initial: Visit | null; onClose: () => void; onSave: (v: Visit) => void }) {
   const [date, setDate] = useState(todayIso()); const [service, setService] = useState(''); const [memo, setMemo] = useState(''); const [price, setPrice] = useState(''); const [product, setProduct] = useState(''); const [visitType, setVisitType] = useState<'신규' | '재방문'>('재방문'); const [nextDate, setNextDate] = useState('');
   useEffect(() => { if (visible) { setDate(initial?.date ?? initialDate); setService(initial?.service ?? ''); setMemo(initial?.memo ?? ''); setPrice(initial ? String(initial.price) : ''); setProduct(initial ? String(initial.productSales) : ''); setVisitType(initial?.visitType ?? '재방문'); setNextDate(initial?.nextVisitDate ?? ''); } }, [visible, initialDate, initial]);
-  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); onSave({ id: initial?.id ?? uuid(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), productSales: parseMoney(product), visitType, nextVisitDate: nextDate || undefined, callbackDone: initial?.callbackDone ?? false, createdAt: initial?.createdAt ?? new Date().toISOString() }); };
+  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); onSave({ id: initial?.id ?? uuid(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), productSales: parseMoney(product), visitType, nextVisitDate: nextDate || undefined, callbackDone: initial?.callbackDone ?? false, callbackCompletedAt: initial?.callbackCompletedAt, createdAt: initial?.createdAt ?? new Date().toISOString() }); };
   return <EditorShell visible={visible} title={initial ? `${customer.name} 방문 수정` : `${customer.name} 방문 기록`} onClose={onClose}><DateField label="방문일 *" value={date} onChange={setDate} /><Text style={styles.label}>방문 구분</Text><View style={styles.segment}><Pressable onPress={() => setVisitType('신규')} style={[styles.segmentButton, visitType === '신규' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '신규' && styles.segmentTextActive]}>신규</Text></Pressable><Pressable onPress={() => setVisitType('재방문')} style={[styles.segmentButton, visitType === '재방문' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '재방문' && styles.segmentTextActive]}>재방문</Text></Pressable></View><Field label="시술명 *" value={service} onChangeText={setService} placeholder="예: 디자인컷 + 다운펌" /><View style={styles.moneyRow}><View style={{ flex: 1 }}><Field label="시술 금액" value={price} onChangeText={setPrice} placeholder="0" keyboardType="number-pad" /></View><View style={{ flex: 1 }}><Field label="제품 판매 금액" value={product} onChangeText={setProduct} placeholder="0" keyboardType="number-pad" /></View></View><DateField label="다음 방문 예정일" value={nextDate} onChange={setNextDate} optional /><Field label="시술 메모" value={memo} onChangeText={setMemo} placeholder="약제, 배합, 디자인 포인트 등을 기록하세요." multiline /><AppButton label={initial ? '방문 기록 수정' : '방문 기록 저장'} onPress={submit} /></EditorShell>;
 }
 
