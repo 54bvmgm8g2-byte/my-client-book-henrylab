@@ -1,6 +1,6 @@
 {
   "name": "my-client-book",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.ts",
   "private": true,
   "scripts": {
@@ -19,7 +19,8 @@
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-native": "0.86.3",
-    "react-native-url-polyfill": "4.0.0"
+    "react-native-url-polyfill": "4.0.0",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

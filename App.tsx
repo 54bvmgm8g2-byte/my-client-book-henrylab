@@ -5,6 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import {
   Alert,
   FlatList,
@@ -219,6 +220,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCustomer, setShowCustomer] = useState(false);
   const [showVisit, setShowVisit] = useState(false);
+  const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
   const [visitInitialDate, setVisitInitialDate] = useState(todayIso());
   const [faceIdEnabled, setFaceIdEnabled] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -334,6 +336,7 @@ export default function App() {
   const saveVisit = (visit: Visit) => {
     void persist({ ...data, visits: [...data.visits.filter((v) => v.id !== visit.id), visit] });
     setShowVisit(false);
+    setEditingVisit(null);
   };
 
   return (
@@ -346,7 +349,12 @@ export default function App() {
             visits={data.visits.filter((v) => v.customerId === selected.id).sort((a, b) => b.date.localeCompare(a.date))}
             onBack={() => setSelectedId(null)}
             onEdit={() => setShowCustomer(true)}
-            onVisit={() => { setVisitInitialDate(todayIso()); setShowVisit(true); }}
+            onVisit={() => { setEditingVisit(null); setVisitInitialDate(todayIso()); setShowVisit(true); }}
+            onEditVisit={(visit) => { setEditingVisit(visit); setVisitInitialDate(visit.date); setShowVisit(true); }}
+            onDeleteVisit={(visitId) => Alert.alert('방문 기록을 삭제할까요?', '이 방문 기록만 삭제되며 복구할 수 없어요.', [
+              { text: '취소', style: 'cancel' },
+              { text: '삭제', style: 'destructive', onPress: () => void persist({ ...data, visits: data.visits.filter((v) => v.id !== visitId) }) },
+            ])}
             onDelete={() => Alert.alert('고객을 삭제할까요?', '방문 기록도 함께 삭제되며 복구할 수 없어요.', [
               { text: '취소', style: 'cancel' },
               { text: '삭제', style: 'destructive', onPress: () => { void persist({ ...data, customers: data.customers.filter((c) => c.id !== selected.id), visits: data.visits.filter((v) => v.customerId !== selected.id) }); setSelectedId(null); } },
@@ -358,8 +366,8 @@ export default function App() {
             <View style={styles.content}>
               {tab === 'home' && <Home data={data} onOpenCustomer={setSelectedId} onAdd={() => setShowCustomer(true)} />}
               {tab === 'customers' && <Customers customers={data.customers} visits={data.visits} onOpen={setSelectedId} onAdd={() => setShowCustomer(true)} />}
-              {tab === 'calendar' && <CalendarScreen data={data} onOpen={setSelectedId} onAddVisit={(customerId, date) => { setSelectedId(customerId); setVisitInitialDate(date); setShowVisit(true); }} onSaveNote={(note) => void persist({ ...data, dailyNotes: [...data.dailyNotes.filter((n) => n.id !== note.id), note] })} onDeleteNote={(noteId) => void persist({ ...data, dailyNotes: data.dailyNotes.filter((n) => n.id !== noteId) })} />}
-              {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onDone={(visitId) => void persist({ ...data, visits: data.visits.map((v) => v.id === visitId ? { ...v, callbackDone: true } : v) })} />}
+              {tab === 'calendar' && <CalendarScreen data={data} onOpen={setSelectedId} onAddVisit={(customerId, date) => { setSelectedId(customerId); setEditingVisit(null); setVisitInitialDate(date); setShowVisit(true); }} onSaveNote={(note) => void persist({ ...data, dailyNotes: [...data.dailyNotes.filter((n) => n.id !== note.id), note] })} onDeleteNote={(noteId) => void persist({ ...data, dailyNotes: data.dailyNotes.filter((n) => n.id !== noteId) })} />}
+              {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onToggle={(visitId, done) => void persist({ ...data, visits: data.visits.map((v) => v.id === visitId ? { ...v, callbackDone: done } : v) })} />}
               {tab === 'stats' && <Stats data={data} />}
               {tab === 'settings' && <Settings data={data} onChange={persist} faceIdEnabled={faceIdEnabled} setFaceIdEnabled={setFaceIdEnabled} email={session.user.email ?? ''} syncing={syncing} syncPending={syncPending} onRefresh={refresh} />}
             </View>
@@ -368,7 +376,7 @@ export default function App() {
         )}
       </View>
       <CustomerEditor visible={showCustomer} initial={selected} onClose={() => setShowCustomer(false)} onSave={saveCustomer} />
-      {selected && <VisitEditor visible={showVisit} customer={selected} initialDate={visitInitialDate} onClose={() => setShowVisit(false)} onSave={saveVisit} />}
+      {selected && <VisitEditor visible={showVisit} customer={selected} initialDate={visitInitialDate} initial={editingVisit} onClose={() => { setShowVisit(false); setEditingVisit(null); }} onSave={saveVisit} />}
     </SafeAreaView>
   );
 }
@@ -499,17 +507,25 @@ function getCallbacks(data: AppData) {
   }).filter((x): x is NonNullable<typeof x> => Boolean(x)).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }
 
-function Callbacks({ data, onOpen, onDone }: { data: AppData; onOpen: (id: string) => void; onDone: (visitId: string) => void }) {
-  const items = getCallbacks(data).filter((x) => !x.visit.callbackDone);
+function Callbacks({ data, onOpen, onToggle }: { data: AppData; onOpen: (id: string) => void; onToggle: (visitId: string, done: boolean) => void }) {
+  const items = getCallbacks(data);
+  const pending = items.filter((x) => !x.visit.callbackDone);
+  const completed = items.filter((x) => x.visit.callbackDone);
+  const renderCard = ({ customer, visit, dueDate }: (typeof items)[number], done: boolean) => (
+    <View key={visit.id} style={[styles.callbackCard, done && styles.callbackCompleted]}>
+      <Pressable onPress={() => onOpen(customer.id)} style={styles.callbackMain}><Avatar name={customer.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{customer.name}</Text><Text style={styles.rowSub}>최근 {visit.service} · {visit.date}</Text><Text style={[styles.callbackDue, dueDate > todayIso() && styles.callbackUpcoming]}>{done ? '연락 완료' : dueDate < todayIso() ? `${dueDate}부터 연락 필요` : dueDate === todayIso() ? '오늘 연락 예정' : `${dueDate} 방문 예정`}</Text></View></Pressable>
+      <AppButton label={done ? '미연락으로 변경' : '연락 완료'} onPress={() => onToggle(visit.id, !done)} secondary />
+    </View>
+  );
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <Header title="콜백" subtitle="예정된 다음 방문일을 빠짐없이 확인하세요." />
-      {items.length === 0 ? <Empty title="예정된 콜백이 없어요" description="방문 기록에 다음 방문 예정일을 입력하면 이곳에 표시돼요." /> : items.map(({ customer, visit, dueDate }) => (
-        <View key={visit.id} style={styles.callbackCard}>
-          <Pressable onPress={() => onOpen(customer.id)} style={styles.callbackMain}><Avatar name={customer.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{customer.name}</Text><Text style={styles.rowSub}>최근 {visit.service} · {visit.date}</Text><Text style={[styles.callbackDue, dueDate > todayIso() && styles.callbackUpcoming]}>{dueDate < todayIso() ? `${dueDate}부터 연락 필요` : dueDate === todayIso() ? '오늘 연락 예정' : `${dueDate} 방문 예정`}</Text></View></Pressable>
-          <AppButton label="연락 완료" onPress={() => onDone(visit.id)} secondary />
-        </View>
-      ))}
+      {items.length === 0 ? <Empty title="예정된 콜백이 없어요" description="방문 기록에 다음 방문 예정일을 입력하면 이곳에 표시돼요." /> : <>
+        <SectionTitle title="미연락" count={pending.length} />
+        {pending.length ? pending.map((item) => renderCard(item, false)) : <View style={styles.slimEmpty}><Text style={styles.slimEmptyText}>미연락 콜백이 없어요.</Text></View>}
+        <SectionTitle title="연락 완료" count={completed.length} />
+        {completed.length ? completed.map((item) => renderCard(item, true)) : <View style={styles.slimEmpty}><Text style={styles.slimEmptyText}>완료한 콜백이 없어요.</Text></View>}
+      </>}
     </ScrollView>
   );
 }
@@ -570,6 +586,56 @@ function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, sync
       if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'MY CLIENT BOOK 백업 저장' });
     } catch { Alert.alert('백업에 실패했어요', '잠시 후 다시 시도해주세요.'); }
   };
+  const exportExcel = async () => {
+    try {
+      const customerRows = [...data.customers].sort((a, b) => a.name.localeCompare(b.name, 'ko')).map((customer) => {
+        const visits = data.visits.filter((visit) => visit.customerId === customer.id);
+        const latest = [...visits].sort((a, b) => b.date.localeCompare(a.date))[0];
+        return [
+          customer.name,
+          displayPhone(customer.phone),
+          customer.preferredStyle,
+          customer.notes,
+          visits.length,
+          visits.reduce((sum, visit) => sum + visit.price + visit.productSales, 0),
+          latest?.date ?? '',
+        ];
+      });
+      const visitRows = [...data.visits].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)).map((visit) => {
+        const customer = data.customers.find((item) => item.id === visit.customerId);
+        return [
+          visit.date,
+          customer?.name ?? '삭제된 고객',
+          customer ? displayPhone(customer.phone) : '',
+          visit.visitType,
+          visit.service,
+          visit.price,
+          visit.productSales,
+          visit.price + visit.productSales,
+          visit.nextVisitDate ?? '',
+          visit.callbackDone ? '연락완료' : '미연락',
+          visit.memo,
+        ];
+      });
+      const customerSheet = XLSX.utils.aoa_to_sheet([
+        ['고객명', '전화번호', '선호 스타일', '고객 메모', '방문수', '누적매출', '최근 방문일'],
+        ...customerRows,
+      ]);
+      customerSheet['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 20 }, { wch: 36 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
+      const visitSheet = XLSX.utils.aoa_to_sheet([
+        ['방문일', '고객명', '전화번호', '방문 구분', '시술명', '시술 금액', '제품 판매 금액', '총매출', '다음 방문 예정일', '콜백 상태', '시술 메모'],
+        ...visitRows,
+      ]);
+      visitSheet['!cols'] = [{ wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 12 }, { wch: 24 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 40 }];
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, customerSheet, '고객목록');
+      XLSX.utils.book_append_sheet(workbook, visitSheet, '방문기록');
+      const base64 = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+      const path = `${FileSystem.cacheDirectory}MY_CLIENT_BOOK_${todayIso()}.xlsx`;
+      await FileSystem.writeAsStringAsync(path, base64, { encoding: FileSystem.EncodingType.Base64 });
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(path, { mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', UTI: 'org.openxmlformats.spreadsheetml.sheet', dialogTitle: 'MY CLIENT BOOK Excel 내보내기' });
+    } catch { Alert.alert('Excel 파일을 만들 수 없어요', '잠시 후 다시 시도해주세요.'); }
+  };
   const reset = () => Alert.alert('모든 기록을 삭제할까요?', '계정은 유지되고 고객·방문 기록·캘린더 메모만 삭제됩니다.', [{ text: '취소', style: 'cancel' }, { text: '전체 삭제', style: 'destructive', onPress: () => void onChange({ customers: [], visits: [], dailyNotes: [] }) }]);
   const deleteAccount = () => Alert.alert('계정과 모든 데이터를 삭제할까요?', '서버와 이 기기의 기록이 모두 삭제되며 복구할 수 없어요.', [{ text: '취소', style: 'cancel' }, { text: '계정 삭제', style: 'destructive', onPress: async () => { const { error } = await supabase.functions.invoke('delete-account', { body: { confirm: true } }); if (error) return Alert.alert('계정을 삭제할 수 없어요', '잠시 후 다시 시도해주세요.'); await supabase.auth.signOut(); } }]);
   return (
@@ -579,16 +645,17 @@ function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, sync
       <Pressable onPress={() => void onRefresh()} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>지금 동기화</Text><Text style={styles.settingSub}>서버의 최신 기록을 다시 불러옵니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
       <View style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>Face ID 잠금</Text><Text style={styles.settingSub}>앱을 열 때 고객 정보를 보호합니다.</Text></View><Switch value={faceIdEnabled} onValueChange={toggleFaceId} trackColor={{ true: ACCENT }} /></View>
       <Pressable onPress={backup} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>데이터 백업</Text><Text style={styles.settingSub}>고객과 방문 기록을 파일로 안전하게 저장합니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
+      <Pressable onPress={exportExcel} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>Excel로 내보내기</Text><Text style={styles.settingSub}>고객목록과 방문기록을 확인용 파일로 저장합니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
       <View style={styles.privacyCard}><Text style={styles.privacyTitle}>계정 동기화</Text><Text style={styles.privacyText}>고객, 방문 기록과 캘린더 메모를 저장합니다. 사진, 관리자센터, 인증 코드, 체험판 기능은 사용하지 않습니다.</Text></View>
       <AppButton label="로그아웃" secondary onPress={() => void supabase.auth.signOut()} />
       <Pressable onPress={reset} style={styles.dangerButton}><Text style={styles.dangerText}>모든 데이터 삭제</Text></Pressable>
       <Pressable onPress={deleteAccount} style={styles.dangerButton}><Text style={styles.dangerText}>계정 삭제</Text></Pressable>
-      <Text style={styles.version}>MY CLIENT BOOK 4.0 · HenryLAB</Text>
+      <Text style={styles.version}>MY CLIENT BOOK 1.1.0 · HenryLAB</Text>
     </ScrollView>
   );
 }
 
-function CustomerDetail({ customer, visits, onBack, onEdit, onVisit, onDelete }: { customer: Customer; visits: Visit[]; onBack: () => void; onEdit: () => void; onVisit: () => void; onDelete: () => void }) {
+function CustomerDetail({ customer, visits, onBack, onEdit, onVisit, onEditVisit, onDeleteVisit, onDelete }: { customer: Customer; visits: Visit[]; onBack: () => void; onEdit: () => void; onVisit: () => void; onEditVisit: (visit: Visit) => void; onDeleteVisit: (visitId: string) => void; onDelete: () => void }) {
   const total = visits.reduce((sum, v) => sum + v.price + v.productSales, 0);
   return (
     <ScrollView contentContainerStyle={styles.detailScroll}>
@@ -598,7 +665,7 @@ function CustomerDetail({ customer, visits, onBack, onEdit, onVisit, onDelete }:
       <View style={styles.infoCard}><Info label="선호 스타일" value={customer.preferredStyle || '미입력'} /><Info label="상담 메모" value={customer.notes || '미입력'} /></View>
       <AppButton label="새 방문 기록 추가" onPress={onVisit} />
       <SectionTitle title="방문 타임라인" count={visits.length} />
-      {visits.length === 0 ? <Empty title="방문 기록이 없어요" description="첫 시술 기록을 남겨보세요." /> : visits.map((visit) => <View key={visit.id} style={styles.visitCard}><View style={{ flex: 1 }}><Text style={styles.visitDate}>{visit.date} · {visit.visitType}</Text><Text style={styles.visitService}>{visit.service}</Text>{!!visit.memo && <Text style={styles.visitMemo}>{visit.memo}</Text>}<Text style={styles.visitPrice}>시술 {money(visit.price)} · 제품 {money(visit.productSales)}</Text>{!!visit.nextVisitDate && <Text style={styles.nextVisit}>다음 방문 예정일 {visit.nextVisitDate}</Text>}</View></View>)}
+      {visits.length === 0 ? <Empty title="방문 기록이 없어요" description="첫 시술 기록을 남겨보세요." /> : visits.map((visit) => <View key={visit.id} style={styles.visitCard}><View style={{ flex: 1 }}><Text style={styles.visitDate}>{visit.date} · {visit.visitType}</Text><Text style={styles.visitService}>{visit.service}</Text>{!!visit.memo && <Text style={styles.visitMemo}>{visit.memo}</Text>}<Text style={styles.visitPrice}>시술 {money(visit.price)} · 제품 {money(visit.productSales)}</Text>{!!visit.nextVisitDate && <Text style={styles.nextVisit}>다음 방문 예정일 {visit.nextVisitDate}</Text>}<View style={styles.visitActions}><Pressable onPress={() => onEditVisit(visit)}><Text style={styles.visitEdit}>수정</Text></Pressable><Pressable onPress={() => onDeleteVisit(visit.id)}><Text style={styles.visitDelete}>삭제</Text></Pressable></View></View></View>)}
       <Pressable onPress={onDelete} style={styles.dangerButton}><Text style={styles.dangerText}>고객 삭제</Text></Pressable>
     </ScrollView>
   );
@@ -611,11 +678,11 @@ function CustomerEditor({ visible, initial, onClose, onSave }: { visible: boolea
   return <EditorShell visible={visible} title={initial ? '고객 정보 수정' : '새 고객 등록'} onClose={onClose}><Field label="고객 이름 *" value={name} onChangeText={setName} placeholder="이름 또는 활동명" /><Field label="전화번호" value={phone} onChangeText={(v) => setPhone(phoneDigits(v))} placeholder="전체 번호 또는 뒷자리 4자리" keyboardType="number-pad" /><Text style={styles.fieldHelp}>입력하지 않아도 되고, 01012345678 또는 5678처럼 입력해도 돼요.</Text><Field label="선호 스타일" value={style} onChangeText={setStyle} placeholder="예: 슬릭컷, 하이레이어드" /><Field label="상담 및 특이사항" value={notes} onChangeText={setNotes} placeholder="모질, 두피 상태, 선호도 등을 기록하세요." multiline /><AppButton label={initial ? '수정 완료' : '고객 등록'} onPress={submit} /></EditorShell>;
 }
 
-function VisitEditor({ visible, customer, initialDate, onClose, onSave }: { visible: boolean; customer: Customer; initialDate: string; onClose: () => void; onSave: (v: Visit) => void }) {
+function VisitEditor({ visible, customer, initialDate, initial, onClose, onSave }: { visible: boolean; customer: Customer; initialDate: string; initial: Visit | null; onClose: () => void; onSave: (v: Visit) => void }) {
   const [date, setDate] = useState(todayIso()); const [service, setService] = useState(''); const [memo, setMemo] = useState(''); const [price, setPrice] = useState(''); const [product, setProduct] = useState(''); const [visitType, setVisitType] = useState<'신규' | '재방문'>('재방문'); const [nextDate, setNextDate] = useState('');
-  useEffect(() => { if (visible) { setDate(initialDate); setService(''); setMemo(''); setPrice(''); setProduct(''); setVisitType('재방문'); setNextDate(''); } }, [visible, initialDate]);
-  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); onSave({ id: uuid(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), productSales: parseMoney(product), visitType, nextVisitDate: nextDate || undefined, createdAt: new Date().toISOString() }); };
-  return <EditorShell visible={visible} title={`${customer.name} 방문 기록`} onClose={onClose}><DateField label="방문일 *" value={date} onChange={setDate} /><Text style={styles.label}>방문 구분</Text><View style={styles.segment}><Pressable onPress={() => setVisitType('신규')} style={[styles.segmentButton, visitType === '신규' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '신규' && styles.segmentTextActive]}>신규</Text></Pressable><Pressable onPress={() => setVisitType('재방문')} style={[styles.segmentButton, visitType === '재방문' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '재방문' && styles.segmentTextActive]}>재방문</Text></Pressable></View><Field label="시술명 *" value={service} onChangeText={setService} placeholder="예: 디자인컷 + 다운펌" /><View style={styles.moneyRow}><View style={{ flex: 1 }}><Field label="시술 금액" value={price} onChangeText={setPrice} placeholder="0" keyboardType="number-pad" /></View><View style={{ flex: 1 }}><Field label="제품 판매 금액" value={product} onChangeText={setProduct} placeholder="0" keyboardType="number-pad" /></View></View><DateField label="다음 방문 예정일" value={nextDate} onChange={setNextDate} optional /><Field label="시술 메모" value={memo} onChangeText={setMemo} placeholder="약제, 배합, 디자인 포인트 등을 기록하세요." multiline /><AppButton label="방문 기록 저장" onPress={submit} /></EditorShell>;
+  useEffect(() => { if (visible) { setDate(initial?.date ?? initialDate); setService(initial?.service ?? ''); setMemo(initial?.memo ?? ''); setPrice(initial ? String(initial.price) : ''); setProduct(initial ? String(initial.productSales) : ''); setVisitType(initial?.visitType ?? '재방문'); setNextDate(initial?.nextVisitDate ?? ''); } }, [visible, initialDate, initial]);
+  const submit = () => { if (!service.trim()) return Alert.alert('시술명을 입력해주세요.'); onSave({ id: initial?.id ?? uuid(), customerId: customer.id, date, service: service.trim(), memo: memo.trim(), price: parseMoney(price), productSales: parseMoney(product), visitType, nextVisitDate: nextDate || undefined, callbackDone: initial?.callbackDone ?? false, createdAt: initial?.createdAt ?? new Date().toISOString() }); };
+  return <EditorShell visible={visible} title={initial ? `${customer.name} 방문 수정` : `${customer.name} 방문 기록`} onClose={onClose}><DateField label="방문일 *" value={date} onChange={setDate} /><Text style={styles.label}>방문 구분</Text><View style={styles.segment}><Pressable onPress={() => setVisitType('신규')} style={[styles.segmentButton, visitType === '신규' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '신규' && styles.segmentTextActive]}>신규</Text></Pressable><Pressable onPress={() => setVisitType('재방문')} style={[styles.segmentButton, visitType === '재방문' && styles.segmentActive]}><Text style={[styles.segmentText, visitType === '재방문' && styles.segmentTextActive]}>재방문</Text></Pressable></View><Field label="시술명 *" value={service} onChangeText={setService} placeholder="예: 디자인컷 + 다운펌" /><View style={styles.moneyRow}><View style={{ flex: 1 }}><Field label="시술 금액" value={price} onChangeText={setPrice} placeholder="0" keyboardType="number-pad" /></View><View style={{ flex: 1 }}><Field label="제품 판매 금액" value={product} onChangeText={setProduct} placeholder="0" keyboardType="number-pad" /></View></View><DateField label="다음 방문 예정일" value={nextDate} onChange={setNextDate} optional /><Field label="시술 메모" value={memo} onChangeText={setMemo} placeholder="약제, 배합, 디자인 포인트 등을 기록하세요." multiline /><AppButton label={initial ? '방문 기록 수정' : '방문 기록 저장'} onPress={submit} /></EditorShell>;
 }
 
 function EditorShell({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
@@ -651,14 +718,14 @@ const styles = StyleSheet.create({
   button: { minHeight: 54, borderRadius: 17, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, marginVertical: 5 }, buttonSecondary: { backgroundColor: '#edf3f0' }, buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' }, buttonTextSecondary: { color: ACCENT }, pressed: { opacity: 0.72 }, disabled: { opacity: 0.4 },
   empty: { backgroundColor: '#fff', padding: 28, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: '#e4e7e2', marginTop: 8 }, emptyMark: { color: ACCENT, fontSize: 42, fontWeight: '200' }, emptyTitle: { fontSize: 19, fontWeight: '800', color: '#1b1e1b', marginTop: 8 }, emptyText: { color: '#7b807b', textAlign: 'center', lineHeight: 20, marginVertical: 10 }, slimEmpty: { padding: 18, borderRadius: 16, backgroundColor: '#e9eeea', marginBottom: 15 }, slimEmptyText: { color: '#737a74', textAlign: 'center' },
   search: { backgroundColor: '#fff', minHeight: 52, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: '#e0e3df', marginBottom: 14, fontSize: 15 }, customerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 11, borderWidth: 1, borderColor: '#e4e7e3' }, customerName: { fontSize: 17, fontWeight: '800', color: '#1b1e1b' }, countBadge: { paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#edf3f0', borderRadius: 10 }, countText: { color: ACCENT, fontSize: 12, fontWeight: '800' },
-  callbackCard: { backgroundColor: '#fff', borderRadius: 22, padding: 17, marginBottom: 12, borderWidth: 1, borderColor: '#e3e6e2' }, callbackMain: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 }, callbackDue: { color: '#b15f3b', fontWeight: '700', fontSize: 12, marginTop: 7 }, callbackUpcoming: { color: ACCENT },
+  callbackCard: { backgroundColor: '#fff', borderRadius: 22, padding: 17, marginBottom: 12, borderWidth: 1, borderColor: '#e3e6e2' }, callbackCompleted: { opacity: 0.72 }, callbackMain: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 }, callbackDue: { color: '#b15f3b', fontWeight: '700', fontSize: 12, marginTop: 7 }, callbackUpcoming: { color: ACCENT },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }, statCard: { width: '48.5%', backgroundColor: '#fff', borderRadius: 20, padding: 18, marginBottom: 10, minHeight: 105, justifyContent: 'space-between', borderWidth: 1, borderColor: '#e3e6e2' }, statLabel: { color: '#777d78', fontSize: 13 }, statValue: { color: '#1b1e1b', fontSize: 19, fontWeight: '900', letterSpacing: -0.5 }, chartCard: { backgroundColor: '#fff', borderRadius: 22, padding: 18, borderWidth: 1, borderColor: '#e3e6e2' }, chartRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 9 }, chartLabel: { width: 32, color: '#727772', fontSize: 12 }, chartTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: '#e9ece8', overflow: 'hidden' }, chartBar: { height: 10, borderRadius: 5, backgroundColor: ACCENT }, chartValue: { width: 43, textAlign: 'right', color: '#555b56', fontSize: 11, fontWeight: '700' },
   monthPicker: { minHeight: 70, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e5e1', paddingHorizontal: 12, marginBottom: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, monthArrow: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }, monthArrowText: { fontSize: 34, color: ACCENT, fontWeight: '300' }, monthPickerLabel: { textAlign: 'center', color: '#888d88', fontSize: 11 }, monthPickerValue: { color: '#1c201c', fontSize: 18, fontWeight: '900', textAlign: 'center', marginTop: 3 },
   salesCard: { backgroundColor: '#173f36', borderRadius: 22, padding: 20, marginBottom: 18 }, salesRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9 }, salesLabel: { color: '#b2cac3', fontSize: 14 }, salesValue: { color: '#fff', fontSize: 15, fontWeight: '800' }, salesTotal: { marginTop: 7, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#6a8981' }, salesTotalLabel: { color: '#fff', fontSize: 16, fontWeight: '900' }, salesTotalValue: { color: '#fff', fontSize: 21, fontWeight: '900' },
   settingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 19, padding: 18, marginBottom: 10, borderWidth: 1, borderColor: '#e4e7e2' }, settingTitle: { color: '#1c1f1c', fontSize: 16, fontWeight: '800' }, settingSub: { color: '#7d827e', fontSize: 13, marginTop: 5, lineHeight: 18 }, chevron: { color: '#8b908c', fontSize: 28 }, privacyCard: { backgroundColor: '#e5eee9', borderRadius: 20, padding: 19, marginVertical: 12 }, privacyTitle: { color: '#244a40', fontWeight: '900', fontSize: 16 }, privacyText: { color: '#587067', lineHeight: 20, fontSize: 13, marginTop: 8 }, dangerButton: { minHeight: 54, paddingVertical: 17, alignItems: 'center', justifyContent: 'center', marginTop: 10 }, dangerText: { color: '#bc554c', fontSize: 16, fontWeight: '800' }, version: { textAlign: 'center', color: '#a1a5a1', fontSize: 12, marginTop: 20 },
   topBar: { height: 62, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: BG, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d9dcd8' }, topLogo: { color: '#173f36', fontSize: 16, fontWeight: '900', letterSpacing: 1.5 }, menuButton: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#fff', borderWidth: 1, borderColor: '#dfe3de', alignItems: 'center', justifyContent: 'center', gap: 4 }, menuLine: { width: 20, height: 2, borderRadius: 1, backgroundColor: '#203f37' }, menuBackdrop: { flex: 1, backgroundColor: 'rgba(17,25,21,0.35)', alignItems: 'flex-end' }, menuPanel: { width: '78%', height: '100%', backgroundColor: BG, paddingTop: 58, paddingHorizontal: 20 }, menuPanelTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }, menuPanelTitle: { fontSize: 26, fontWeight: '900', color: '#171a17' }, menuClose: { fontSize: 36, color: '#343934', fontWeight: '300' }, menuItem: { minHeight: 62, borderRadius: 18, paddingHorizontal: 15, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }, menuItemActive: { backgroundColor: '#dfece7' }, menuIconWrap: { width: 40, alignItems: 'center' }, menuItemIcon: { color: '#747b76', fontSize: 23, fontWeight: '700' }, menuItemText: { color: '#343934', fontSize: 17, fontWeight: '800', marginLeft: 8 }, menuItemTextActive: { color: ACCENT },
   detailScroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 }, detailTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 54 }, back: { fontSize: 40, color: '#242824', fontWeight: '300' }, detailTopTitle: { fontSize: 16, fontWeight: '800', color: '#1c1f1c' }, edit: { color: ACCENT, fontWeight: '800', fontSize: 15 }, profile: { alignItems: 'center', paddingVertical: 22 }, profileName: { fontSize: 27, fontWeight: '900', color: '#171a17', marginTop: 13 }, profileSub: { color: '#7b807b', marginTop: 6 }, summaryCard: { backgroundColor: '#173f36', borderRadius: 22, paddingVertical: 19, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 12 }, summaryValue: { color: '#fff', fontSize: 17, fontWeight: '900', textAlign: 'center' }, summaryLabel: { color: '#a9c0ba', fontSize: 11, marginTop: 5, textAlign: 'center' }, divider: { width: StyleSheet.hairlineWidth, height: 35, backgroundColor: '#719087' }, infoCard: { backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 18, marginBottom: 12, borderWidth: 1, borderColor: '#e3e6e2' }, infoRow: { paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e4e6e3' }, infoLabel: { color: '#878c87', fontSize: 12, marginBottom: 6 }, infoValue: { color: '#252925', fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  visitCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 20, padding: 14, marginBottom: 11, borderWidth: 1, borderColor: '#e2e5e1' }, visitDate: { color: ACCENT, fontSize: 11, fontWeight: '800' }, visitService: { color: '#1e211e', fontSize: 16, fontWeight: '900', marginTop: 5 }, visitMemo: { color: '#777c78', fontSize: 12, lineHeight: 17, marginTop: 5 }, visitPrice: { color: '#333833', fontWeight: '800', fontSize: 13, marginTop: 7 }, nextVisit: { color: '#a45c3d', fontWeight: '700', fontSize: 12, marginTop: 7 },
+  visitCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 20, padding: 14, marginBottom: 11, borderWidth: 1, borderColor: '#e2e5e1' }, visitDate: { color: ACCENT, fontSize: 11, fontWeight: '800' }, visitService: { color: '#1e211e', fontSize: 16, fontWeight: '900', marginTop: 5 }, visitMemo: { color: '#777c78', fontSize: 12, lineHeight: 17, marginTop: 5 }, visitPrice: { color: '#333833', fontWeight: '800', fontSize: 13, marginTop: 7 }, nextVisit: { color: '#a45c3d', fontWeight: '700', fontSize: 12, marginTop: 7 }, visitActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 20, marginTop: 14, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#e2e5e1' }, visitEdit: { color: ACCENT, fontSize: 13, fontWeight: '900' }, visitDelete: { color: '#bc554c', fontSize: 13, fontWeight: '900' },
   modalSafe: { flex: 1, backgroundColor: BG }, modalTop: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d8dbd7' }, modalClose: { color: ACCENT, fontSize: 15, fontWeight: '700' }, modalTitle: { fontSize: 17, fontWeight: '900', color: '#1c1f1c' }, modalContent: { padding: 20, paddingBottom: 50 }, fieldWrap: { marginBottom: 17 }, label: { color: '#343834', fontSize: 13, fontWeight: '800', marginBottom: 8 }, input: { backgroundColor: '#fff', minHeight: 53, borderRadius: 16, borderWidth: 1, borderColor: '#dfe2de', paddingHorizontal: 15, fontSize: 16, color: '#202420' }, textarea: { minHeight: 104, paddingTop: 14, textAlignVertical: 'top' }, moneyRow: { flexDirection: 'row', gap: 10 }, fieldHelp: { color: '#7b817c', fontSize: 12, lineHeight: 18, marginTop: -10, marginBottom: 17 }, segment: { flexDirection: 'row', backgroundColor: '#e9ece8', padding: 4, borderRadius: 16, marginBottom: 18 }, segmentButton: { flex: 1, height: 45, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, segmentActive: { backgroundColor: ACCENT }, segmentText: { color: '#767c77', fontSize: 15, fontWeight: '800' }, segmentTextActive: { color: '#fff' }, dateField: { backgroundColor: '#fff', minHeight: 56, borderRadius: 16, borderWidth: 1, borderColor: '#dfe2de', paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, dateFieldText: { color: '#202420', fontSize: 16, fontWeight: '600' }, dateFieldPlaceholder: { color: '#a4a7a3', fontWeight: '400' }, dateFieldIcon: { color: ACCENT, fontSize: 20 },
   calendarCard: { backgroundColor: '#fff', borderRadius: 22, padding: 12, borderWidth: 1, borderColor: '#e2e5e1' }, weekRow: { flexDirection: 'row', marginBottom: 5 }, weekLabel: { width: '14.285%', textAlign: 'center', color: '#737973', fontSize: 12, fontWeight: '800', paddingVertical: 7 }, sunday: { color: '#bc554c' }, calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' }, dayCell: { width: '14.285%', height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }, dayCellActive: { backgroundColor: ACCENT }, dayNumberWrap: { height: 21, minWidth: 24, alignItems: 'center', justifyContent: 'flex-start' }, dayText: { color: '#272b27', fontSize: 14, lineHeight: 17, fontWeight: '700' }, dayMuted: { color: '#c4c7c4' }, dayToday: { fontWeight: '900' }, todayIndicator: { position: 'absolute', bottom: 0, width: 14, height: 2, borderRadius: 1, backgroundColor: '#252925' }, todayIndicatorActive: { backgroundColor: '#fff' }, dayTextActive: { color: '#fff' }, dayMarkers: { height: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 }, dayBadge: { minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#dfece7', alignItems: 'center', justifyContent: 'center' }, dayBadgeActive: { backgroundColor: '#fff' }, dayBadgeText: { color: ACCENT, fontSize: 9, fontWeight: '900' }, dayBadgeTextActive: { color: ACCENT }, noteDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#b15f3b' }, noteDotActive: { backgroundColor: '#fff' }, calendarSummary: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#173f36', borderRadius: 20, padding: 17, marginTop: 12, marginBottom: 14 }, calendarSummaryLabel: { color: '#a9c0ba', fontSize: 10, textAlign: 'center' }, calendarSummaryValue: { color: '#fff', fontSize: 13, fontWeight: '900', marginTop: 5, textAlign: 'center' },
   daySectionTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, smallAdd: { backgroundColor: '#e1ece7', borderRadius: 13, paddingHorizontal: 12, paddingVertical: 9 }, smallAddText: { color: ACCENT, fontSize: 12, fontWeight: '900' }, pickerBackdrop: { flex: 1, backgroundColor: 'rgba(17,25,21,0.35)', justifyContent: 'flex-end' }, customerPicker: { maxHeight: '70%', backgroundColor: BG, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 40 }, customerPickerTitle: { color: '#171a17', fontSize: 23, fontWeight: '900' }, customerPickerSub: { color: '#777d78', fontSize: 13, marginTop: 5, marginBottom: 18 }, pickerCustomer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 17, padding: 13, marginBottom: 8, borderWidth: 1, borderColor: '#e2e5e1' }, datePickerPanel: { backgroundColor: BG, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 34 }, datePickerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, datePickerTitle: { fontSize: 22, fontWeight: '900', color: '#171a17' }, datePickerClose: { fontSize: 34, color: '#4f5550', fontWeight: '300' }, datePickerMonth: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8 }, datePickerDay: { width: '14.285%', height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, datePickerActions: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 12 }, noteCard: { backgroundColor: '#fff', borderRadius: 17, padding: 15, marginBottom: 10, borderWidth: 1, borderColor: '#e2e5e1' }, noteText: { color: '#282c28', fontSize: 14, lineHeight: 21 }, noteActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 18, marginTop: 12 }, noteEdit: { color: ACCENT, fontSize: 13, fontWeight: '800' }, noteDelete: { color: '#bc554c', fontSize: 13, fontWeight: '800' },
