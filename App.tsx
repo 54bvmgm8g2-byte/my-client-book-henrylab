@@ -651,7 +651,7 @@ function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, sync
       <AppButton label="로그아웃" secondary onPress={() => void supabase.auth.signOut()} />
       <Pressable onPress={reset} style={styles.dangerButton}><Text style={styles.dangerText}>모든 데이터 삭제</Text></Pressable>
       <Pressable onPress={deleteAccount} style={styles.dangerButton}><Text style={styles.dangerText}>계정 삭제</Text></Pressable>
-      <Text style={styles.version}>MY CLIENT BOOK 1.1.0 · HenryLAB</Text>
+      <Text style={styles.version}>MY CLIENT BOOK 1.1.1 · HenryLAB</Text>
     </ScrollView>
   );
 }
