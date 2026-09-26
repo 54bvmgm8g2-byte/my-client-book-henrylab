@@ -472,18 +472,33 @@ function customerMemoPreview(notes: string, normalizedQuery: string): string {
 function Customers({ customers, visits, onOpen, onAdd }: { customers: Customer[]; visits: Visit[]; onOpen: (id: string) => void; onAdd: () => void }) {
   const [query, setQuery] = useState('');
   const normalizedQuery = query.replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase();
+  const matchesQuery = (value: string) => value.replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase().includes(normalizedQuery);
+  const visitCounts = new Map<string, number>();
+  const matchedVisits = new Map<string, Visit>();
+  for (const visit of visits) {
+    visitCounts.set(visit.customerId, (visitCounts.get(visit.customerId) ?? 0) + 1);
+    if (!normalizedQuery || !matchesQuery(visit.memo ?? '')) continue;
+    const previous = matchedVisits.get(visit.customerId);
+    if (!previous || visit.date > previous.date || (visit.date === previous.date && visit.createdAt > previous.createdAt)) {
+      matchedVisits.set(visit.customerId, visit);
+    }
+  }
   const filtered = customers
     .filter((c) => [c.name, phoneDigits(c.phone), c.preferredStyle, c.notes]
-      .some((value) => (value ?? '').replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase().includes(normalizedQuery)))
+      .some((value) => matchesQuery(value ?? '')) || matchedVisits.has(c.id))
     .sort((a, b) => (Date.parse(a.createdAt) || 0) - (Date.parse(b.createdAt) || 0) || a.id.localeCompare(b.id));
   return (
     <View style={styles.screen}>
       <Header title="고객" subtitle={`${customers.length}명의 고객이 기록되어 있어요.`} action={<Pressable onPress={onAdd} style={styles.circleButton}><Text style={styles.circleButtonText}>＋</Text></Pressable>} />
       <TextInput value={query} onChangeText={setQuery} placeholder="이름, 전화번호, 스타일, 메모 검색" placeholderTextColor="#969a96" style={styles.search} />
-      {filtered.length === 0 ? <Empty title={query ? '검색 결과가 없어요' : '등록된 고객이 없어요'} description={query ? '이름, 전화번호, 스타일 또는 메모를 검색해보세요.' : '고객을 등록하면 방문 이력을 바로 연결할 수 있어요.'} actionLabel={query ? undefined : '고객 등록'} onAction={query ? undefined : onAdd} /> : (
+      {filtered.length === 0 ? <Empty title={query ? '검색 결과가 없어요' : '등록된 고객이 없어요'} description={query ? '이름, 전화번호, 스타일, 고객 메모 또는 방문 메모를 검색해보세요.' : '고객을 등록하면 방문 이력을 바로 연결할 수 있어요.'} actionLabel={query ? undefined : '고객 등록'} onAction={query ? undefined : onAdd} /> : (
         <FlatList data={filtered} keyExtractor={(c) => c.id} contentContainerStyle={{ paddingBottom: 30 }} renderItem={({ item }) => {
-          const count = visits.filter((v) => v.customerId === item.id).length;
-          const memoPreview = customerMemoPreview(item.notes ?? '', normalizedQuery);
+          const count = visitCounts.get(item.id) ?? 0;
+          const matchedVisit = matchedVisits.get(item.id);
+          const showVisitMemo = normalizedQuery && !matchesQuery(item.notes ?? '') && matchedVisit;
+          const memoPreview = showVisitMemo
+            ? `방문 메모 · ${customerMemoPreview(showVisitMemo.memo, normalizedQuery)}`
+            : customerMemoPreview(item.notes ?? '', normalizedQuery);
           return (
             <Pressable onPress={() => onOpen(item.id)} style={styles.customerCard}>
               <Avatar name={item.name} large />
