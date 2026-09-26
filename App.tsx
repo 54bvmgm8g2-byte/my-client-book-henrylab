@@ -23,6 +23,7 @@ import {
   View,
 } from 'react-native';
 import { supabase } from './supabase';
+import { APP_VERSION, UpdateNotices } from './UpdateNotices';
 
 type Customer = {
   id: string;
@@ -227,6 +228,7 @@ export default function App() {
   const [locked, setLocked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [updateHistoryOpen, setUpdateHistoryOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: auth }) => { setSession(auth.session); setAuthReady(true); });
@@ -370,12 +372,13 @@ export default function App() {
               {tab === 'calendar' && <CalendarScreen data={data} onOpen={setSelectedId} onAddVisit={(customerId, date) => { setSelectedId(customerId); setEditingVisit(null); setVisitInitialDate(date); setShowVisit(true); }} onSaveNote={(note) => void persist({ ...data, dailyNotes: [...data.dailyNotes.filter((n) => n.id !== note.id), note] })} onDeleteNote={(noteId) => void persist({ ...data, dailyNotes: data.dailyNotes.filter((n) => n.id !== noteId) })} />}
               {tab === 'callbacks' && <Callbacks data={data} onOpen={setSelectedId} onToggle={(visitId, done) => void persist({ ...data, visits: data.visits.map((v) => v.id === visitId ? { ...v, callbackDone: done, callbackCompletedAt: done ? new Date().toISOString() : undefined } : v) })} />}
               {tab === 'stats' && <Stats data={data} />}
-              {tab === 'settings' && <Settings data={data} onChange={persist} faceIdEnabled={faceIdEnabled} setFaceIdEnabled={setFaceIdEnabled} email={session.user.email ?? ''} syncing={syncing} syncPending={syncPending} onRefresh={refresh} />}
+              {tab === 'settings' && <Settings data={data} onChange={persist} faceIdEnabled={faceIdEnabled} setFaceIdEnabled={setFaceIdEnabled} email={session.user.email ?? ''} syncing={syncing} syncPending={syncPending} onRefresh={refresh} onShowUpdates={() => setUpdateHistoryOpen(true)} />}
             </View>
             <MenuSheet visible={menuOpen} current={tab} onClose={() => setMenuOpen(false)} onSelect={(next) => { setTab(next); setMenuOpen(false); }} />
           </>
         )}
       </View>
+      <UpdateNotices historyOpen={updateHistoryOpen} onCloseHistory={() => setUpdateHistoryOpen(false)} available={!showCustomer && !showVisit && !menuOpen} />
       <CustomerEditor visible={showCustomer} initial={selected} onClose={() => setShowCustomer(false)} onSave={saveCustomer} />
       {selected && <VisitEditor visible={showVisit} customer={selected} initialDate={visitInitialDate} initial={editingVisit} onClose={() => { setShowVisit(false); setEditingVisit(null); }} onSave={saveVisit} />}
     </SafeAreaView>
@@ -571,7 +574,7 @@ function Stats({ data }: { data: AppData }) {
   );
 }
 
-function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, syncing, syncPending, onRefresh }: { data: AppData; onChange: (data: AppData) => Promise<void>; faceIdEnabled: boolean; setFaceIdEnabled: (v: boolean) => void; email: string; syncing: boolean; syncPending: boolean; onRefresh: () => Promise<void> }) {
+function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, syncing, syncPending, onRefresh, onShowUpdates }: { data: AppData; onChange: (data: AppData) => Promise<void>; faceIdEnabled: boolean; setFaceIdEnabled: (v: boolean) => void; email: string; syncing: boolean; syncPending: boolean; onRefresh: () => Promise<void>; onShowUpdates: () => void }) {
   const toggleFaceId = async (value: boolean) => {
     if (value) {
       const compatible = await LocalAuthentication.hasHardwareAsync();
@@ -651,10 +654,11 @@ function Settings({ data, onChange, faceIdEnabled, setFaceIdEnabled, email, sync
       <Pressable onPress={backup} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>데이터 백업</Text><Text style={styles.settingSub}>고객과 방문 기록을 파일로 안전하게 저장합니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
       <Pressable onPress={exportExcel} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>Excel로 내보내기</Text><Text style={styles.settingSub}>고객목록과 방문기록을 확인용 파일로 저장합니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
       <View style={styles.privacyCard}><Text style={styles.privacyTitle}>계정 동기화</Text><Text style={styles.privacyText}>고객, 방문 기록과 캘린더 메모를 저장합니다. 사진, 관리자센터, 인증 코드, 체험판 기능은 사용하지 않습니다.</Text></View>
+      <Pressable accessibilityRole="button" onPress={onShowUpdates} style={styles.settingCard}><View style={{ flex: 1 }}><Text style={styles.settingTitle}>업데이트 내역</Text><Text style={styles.settingSub}>버전별 새로운 기능과 개선사항을 확인합니다.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
       <AppButton label="로그아웃" secondary onPress={() => void supabase.auth.signOut()} />
       <Pressable onPress={reset} style={styles.dangerButton}><Text style={styles.dangerText}>모든 데이터 삭제</Text></Pressable>
       <Pressable onPress={deleteAccount} style={styles.dangerButton}><Text style={styles.dangerText}>계정 삭제</Text></Pressable>
-      <Text style={styles.version}>MY CLIENT BOOK 1.1.2 · HenryLAB</Text>
+      <Text style={styles.version}>MY CLIENT BOOK {APP_VERSION} · HenryLAB</Text>
     </ScrollView>
   );
 }
