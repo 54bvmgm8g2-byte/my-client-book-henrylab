@@ -3,7 +3,7 @@
     "name": "MY CLIENT BOOK",
     "slug": "my-client-book",
     "scheme": "myclientbook",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "icon": "./assets/icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -15,7 +15,9 @@
         "NSFaceIDUsageDescription": "고객 정보를 안전하게 보호하기 위해 Face ID를 사용합니다."
       }
     },
-    "plugins": ["expo-local-authentication"],
+    "plugins": [
+      "expo-local-authentication"
+    ],
     "extra": {
       "privacyMode": "account-sync",
       "distribution": "paid"
