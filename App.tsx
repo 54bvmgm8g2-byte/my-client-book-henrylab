@@ -453,6 +453,22 @@ function Home({ data, onOpenCustomer, onAdd }: { data: AppData; onOpenCustomer: 
   );
 }
 
+function customerMemoPreview(notes: string, normalizedQuery: string): string {
+  const lines = notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (!normalizedQuery) return lines[0] ?? '';
+  const normalize = (value: string) => value.replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase();
+  const matchedLine = lines.find((line) => normalize(line).includes(normalizedQuery));
+  const line = matchedLine ?? notes.replace(/\s+/g, ' ').trim();
+  const matchIndex = normalize(line).indexOf(normalizedQuery);
+  if (matchIndex < 0) return lines[0] ?? '';
+  const positions: number[] = [];
+  for (let i = 0; i < line.length; i += 1) {
+    if (/[0-9a-zA-Z가-힣]/.test(line[i])) positions.push(i);
+  }
+  const start = Math.max(0, positions[matchIndex] - 8);
+  return `${start > 0 ? '…' : ''}${line.slice(start)}`;
+}
+
 function Customers({ customers, visits, onOpen, onAdd }: { customers: Customer[]; visits: Visit[]; onOpen: (id: string) => void; onAdd: () => void }) {
   const [query, setQuery] = useState('');
   const normalizedQuery = query.replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase();
@@ -467,7 +483,18 @@ function Customers({ customers, visits, onOpen, onAdd }: { customers: Customer[]
       {filtered.length === 0 ? <Empty title={query ? '검색 결과가 없어요' : '등록된 고객이 없어요'} description={query ? '이름, 전화번호, 스타일 또는 메모를 검색해보세요.' : '고객을 등록하면 방문 이력을 바로 연결할 수 있어요.'} actionLabel={query ? undefined : '고객 등록'} onAction={query ? undefined : onAdd} /> : (
         <FlatList data={filtered} keyExtractor={(c) => c.id} contentContainerStyle={{ paddingBottom: 30 }} renderItem={({ item }) => {
           const count = visits.filter((v) => v.customerId === item.id).length;
-          return <Pressable onPress={() => onOpen(item.id)} style={styles.customerCard}><Avatar name={item.name} large /><View style={{ flex: 1 }}><Text style={styles.customerName}>{item.name}</Text><Text style={styles.rowSub}>{displayPhone(item.phone, true)}{item.preferredStyle ? ` · ${item.preferredStyle}` : ''}</Text></View><View style={styles.countBadge}><Text style={styles.countText}>{count}회</Text></View></Pressable>;
+          const memoPreview = customerMemoPreview(item.notes ?? '', normalizedQuery);
+          return (
+            <Pressable onPress={() => onOpen(item.id)} style={styles.customerCard}>
+              <Avatar name={item.name} large />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.customerName}>{item.name}</Text>
+                <Text style={styles.rowSub}>{displayPhone(item.phone, true)}{item.preferredStyle ? ` · ${item.preferredStyle}` : ''}</Text>
+                {memoPreview ? <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.rowSub, { marginTop: 5 }]}>{memoPreview}</Text> : null}
+              </View>
+              <View style={styles.countBadge}><Text style={styles.countText}>{count}회</Text></View>
+            </Pressable>
+          );
         }} />
       )}
     </View>
